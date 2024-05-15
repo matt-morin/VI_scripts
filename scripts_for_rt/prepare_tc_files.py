@@ -1,10 +1,87 @@
-#! /usr/bin/env python2
-
+#! /usr/bin/env python3
 import numpy as np
 import os
 import sys
 import getopt
-from vi_functions import *
+#from vi_functions import *
+#from netCDF4 import Dataset
+from scipy.io import netcdf
+
+# ===> define functions to be used 
+
+def read_nc(file, var_name):
+    f1 = netcdf.netcdf_file(file, 'r')
+    var  = f1.variables[var_name][:]
+    var  = np.squeeze(var)
+    return var
+
+def find_min_dist_tc_center_and_domain_edges(tc_lon, tc_lat, grid_lont, grid_latt):
+  ny, nx = np.shape(grid_lont)
+  dist = (grid_latt-tc_lat)**2 + (grid_lont-tc_lon)**2
+  detected_center =  np.where(dist == np.min(dist))
+  jc, ic = detected_center[0][0], detected_center[1][0]
+  dist_e = ic
+  dist_w = nx-ic
+  dist_s = ny-jc
+  dist_n = jc
+  return dist_e, dist_w, dist_s, dist_n
+
+def read_tcvitals(filename):
+    # Note TCs in input file are sorted based on intensity
+    tc_dict = {}
+    f = open(filename, "r")
+    counter = 0
+    for line in f:
+        tc_tmp = {}
+        L = line.split()
+        tc_id = str(counter)+'_'+L[1]
+        tc_tmp['lat'] = float(L[5][:-1])/10
+        tc_tmp['lon'] = float(L[6][:-1])/10
+        tc_tmp['vmax'] = float(L[12])
+        tc_dict[tc_id] = tc_tmp
+        counter += 1
+    return tc_dict
+
+def find_center(var, lon, lat, tc_lon, tc_lat):
+    dlon = lon - (360-tc_lon)
+    dlat = lat - tc_lat
+  
+    dist = (dlon**2+dlat**2)**0.5
+    center = np.where(dist == np.nanmin(dist))
+    ic, jc = center[0][0], center[1][0]
+
+    box_half_width = 0.5 # deg
+    res = 1./33 # res in deg
+    scope = np.int(box_half_width/res)
+  
+    var_sel = var[ic-scope:ic+scope, jc-scope:jc+scope]
+    lon_sel = lon[ic-scope:ic+scope, jc-scope:jc+scope]
+    lat_sel = lat[ic-scope:ic+scope, jc-scope:jc+scope]
+
+    detected_center =  np.where(var_sel == np.nanmin(var_sel))
+
+    ic_new, jc_new = detected_center[0][0], detected_center[1][0]
+
+    tc_lon_new = 360-lon_sel[ic_new,jc_new]
+    tc_lat_new = lat_sel[ic_new,jc_new]
+
+    return tc_lon_new, tc_lat_new
+
+def detect_tc_center_from_ic_for_jet(ic_dir, tc_lon, tc_lat):
+    f1 = netcdf.netcdf_file(ic_dir+'/ps_nc3.nc', 'r')
+    print(ic_dir+'/ps_nc3.nc')
+
+    lon = f1.variables['geolon'][:]
+    lat = f1.variables['geolat'][:]
+    var = np.squeeze(f1.variables['ps'][:])
+    #slmsk = np.squeeze(f2.variables['slmsk'][:])
+    #slmsk[slmsk==1]=np.nan
+    #slmsk[slmsk==0]=1
+    #var = var*slmsk
+    tc_lon_new, tc_lat_new = find_center(var, lon, lat, tc_lon, tc_lat)
+    return np.round(tc_lon_new,1), np.round(tc_lat_new,1)
+
+# ===> main program
 
 # INPUT needed
 
@@ -53,8 +130,7 @@ if not os.path.exists(vital_dir_out):
    os.mkdir(vital_dir_out)
 min_index_dom = int(min_dist_dom/res)
 
-# !!! read_nc won't work on Jet
-grid_file = ic_base + '/INPUT/grid_spec.nest02.tile7.nc'
+grid_file = ic_base + '/GRID/grid_spec.nest02.tile7.nc'
 grid_latt = read_nc(grid_file, 'grid_latt')
 grid_lont = read_nc(grid_file, 'grid_lont')
 ic_dir = ic_base + date[:-2]+'.'+date[-2:]+'Z_IC'
@@ -114,12 +190,11 @@ if True:
       # detect TC in IC - location of min pres
       #print 'Obs lat, lon:', tc_lat, tc_lon
 
-      # !!! read_nc fun need to be revised for Jet
-      tc_lon_mod, tc_lat_mod = detect_tc_center_from_ic(ic_dir, tc_lon, tc_lat, opt=0)
+      tc_lon_mod, tc_lat_mod = detect_tc_center_from_ic_for_jet(ic_dir, tc_lon, tc_lat)
       #print 'Obs lat, lon:', tc_lat, tc_lon 
       #print 'Mod lat, lon:', tc_lat_mod, tc_lon_mod
       if abs(tc_lat_mod-tc_lat) >0.5 or  abs(tc_lon_mod-tc_lon) > 0.5:
-         print 'Check this case more carefully ...'
+         print ('Check this case more carefully ...')
      
       # write out txt files
       do_write_out = True

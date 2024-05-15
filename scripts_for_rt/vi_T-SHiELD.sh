@@ -1,23 +1,22 @@
 #!/bin/bash
-#SBATCH --output=/ncrc/home1/Kun.Gao/vi_driver/stdout/%x.o%j
-#SBATCH --job-name=vi_on_ic
-#SBATCH --partition=batch
-#SBATCH --account=gfdl_W
+#SBATCH --output=/home/Kun.Gao/NGGPS/vi_driver/scripts_for_rt/stdout/%x.o%j
+#SBATCH --job-name=tshield_vi
+#SBATCH --account=hfip-gfdl
 ##SBATCH --qos=urgent
-#SBATCH --ntasks=1
-#SBATCH --time=03:00:00
-#SBATCH --cluster=c5
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=8
+#SBATCH --time=02:00:00
+#SBATCH --partition=bigmem
 
 #set -xe
-set -x # for C5
+set -x # this script should trigger forecast job even if VI does not work
 
 ulimit
 
 #===============================================================================
 # setting up
 
-export version=v2.5
-export exec=exec_vi_ic_${version}
+export exec=exec_rt
 #export CDATE=2022092000
 #export STORMID=07L
 
@@ -37,23 +36,23 @@ export ibgs=2 # cold start
 export iflag_cold=1 # cold start
 
 # -- data dir
-export vital_dir=/ncrc/home1/Kun.Gao/vi_driver/script_for_rt/tc_vitals/processed/ # !!!
-export ic_base_dir=/lustre/f2/dev/gfdl/Kun.Gao/SHiELD_IC_v16/C768r10n4_atl_new/
-export grid_dir=${ic_base_dir}/INPUT/
+export vital_dir=/home/${USER}/NGGPS/vi_driver/scripts_for_rt/tc_vitals/processed/ # !!!
+export ic_base_dir=/mnt/lfs1/HFIP/hfip-gfdl/${USER}/SHiELD_INPUT_DATA/variable.v202101/C768r10n4_atl_new
+export grid_dir=${ic_base_dir}/GRID/ # !!!
 export ic_dir_src=${ic_base_dir}/${CDATE:0:8}.${CDATE:8:2}Z_IC/
 export ic_dir_dst=${ic_dir_src}
 export ic_file_ori=${ic_dir_src}/gfs_data.tile7.nc
 export ic_file_dst=${ic_dir_dst}/gfs_data.tile7_vi_rt_test.nc # !!!
 
 # -- work dir
-export work_dir_base=/lustre/f2/scratch/gfdl/Kun.Gao/tshield_vi_work_ic_rt_test/
+export work_dir_base=/mnt/lfs1/HFIP/hfip-gfdl/${USER}/vi_work_rt2023/ # !!!
 export work_dir=${work_dir_base}/${CDATE}/${STORMID}
 export work_dir_ic=${work_dir}/data/ic/
 export work_dir_vital=${work_dir}/data/vital/
 export work_dir_vi=${work_dir}/atm_vi/
 
 # -- code dir
-export HOMEhafs=/ncrc/home1/Kun.Gao/hafs_tools/
+export HOMEhafs=/home/${USER}/NGGPS/hafs_tools/
 export USHhafs=${HOMEhafs}/ush
 export EXEChafs=${HOMEhafs}/sorc/hafs_tools.fd/${exec}/
 export FIXhafs=${HOMEhafs}/fix
@@ -76,12 +75,9 @@ mkdir -p $work_dir_ic
 mkdir -p $work_dir_vital
 mkdir -p $work_dir_vi
 
-#===============================================================================
-# main program starts now 
-
 source ${USHhafs}/hafs_pre_job.sh.inc > /dev/null 2>&1
-module use ${HOMEhafs}/modulefiles
-module load modulefile.hafs.gaea_c5 > /dev/null 2>&1
+module use ${HOMEhafs}/modulefiles > /dev/null 2>&1
+module load modulefile.hafs.jet > /dev/null 2>&1
 #module list
 
 #===============================================================================
@@ -196,7 +192,7 @@ if [ ${do_split} -gt 0 ]; then
     echo "=== VI split step executed successfully"
   else
     echo "=== VI split step failed"
-    exit 1
+    #exit 1
   fi
 
 fi
@@ -228,7 +224,7 @@ if [ ${do_pert} -gt 0 ]; then
     echo "=== VI anl_pert step executed successfully"
   else 
     echo "=== VI anl_pert step failed"
-    exit 1
+    #exit 1
   fi
 fi
 
@@ -265,7 +261,7 @@ if [ ${do_combine} -gt 0 ]; then
     echo "=== VI anl_combine step executed successfully"
   else 
     echo "=== VI anl_combine step failed"
-    exit 1
+    #exit 1
   fi
 
   if [ -s storm_anl_combine ]; then
@@ -305,7 +301,7 @@ if [ ${do_enhance} -gt 0 ]; then
       echo "=== VI anl_enhance step executed successfully"
     else 
       echo "=== VI anl_enhance step failed"
-      exit 1
+      #exit 1
     fi
     cp -p storm_anl_enhance storm_anl
   fi
@@ -320,7 +316,7 @@ if [ ${do_post} -gt 0 ]; then
 
   # --- part 1:  merge the data in the selected box back to the whole domain 
   cp ${ic_file_for_vi} ${work_dir_ic}/gfs_data_after_vi.nc
-  ${APRUNC1} ${DATOOL} hafsvi_postproc_ic --in_file=${work_dir_vi}/anl_storm/storm_anl \
+  ${APRUNC} ${DATOOL} hafsvi_postproc_ic --in_file=${work_dir_vi}/anl_storm/storm_anl \
                                --debug_level=11 --interpolation_points=4 \
                                --relaxzone=30 \
                                --infile_date=${CDATE:0:8}.${CDATE:8:2}0000 \
@@ -359,4 +355,13 @@ if [ ${do_post} -gt 0 ]; then
  fi
 
 fi
+
+#===============================================================================
+# trigger forecast job regardless if VI is successfully
+
+# submit the forecast job
+echo 'VI is done; submitting forecast job'
+runscript=${HOME}/NGGPS/T-SHiELD_rt2023/SHiELD_run/JETrt/submit_forecast.sh
+runmode='realtime'
+${runscript} -y "${CDATE}" -m "${runmode}"
 
