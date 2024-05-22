@@ -2,12 +2,19 @@
 module load intelpython/3.6.5
 module load nco/4.9.3
 
-# INPUT needed: CDATE
+# This script drives the VI-related workflow for the RT2023 T-SHiELD on Jet
+# It is triggerd by the IC creation script once ICs are generated
+
+# If there are storms that need VI, this script will:
+#  - create two TC text files to be used by VI
+#  - launch the VI script
+
+# === get the model initialization date&time from command-line argument 
 set CDATE = $1
 
 # === parameter settings
 
-# vi criteria
+# vi criteria 
 set min_wind = 30. # KGao 08/22/23 - do not apply VI on weak storms
 set max_lat = 35.
 
@@ -16,13 +23,11 @@ set vi_tool_dir = ${HOME}/NGGPS/hafs_tools/
 set vi_driver_dir = ${HOME}/NGGPS/vi_driver/scripts_for_rt/
 set vi_script = ${vi_driver_dir}/vi_T-SHiELD.sh
 
-# vitals
-set vital_base = ${vi_driver_dir}/tc_vitals # change to fs
+# tc files 
+set vital_base = ${vi_driver_dir}/tc_vital
 set vital_dir_obs = ${vital_base}/observed_all/
 set vital_dir_processed = ${vital_base}/processed/
 set obs_vital = ${vital_dir_obs}/tcvitals_${CDATE}.txt # this is the obs vital at given time
-
-echo $obs_vital
 
 # ics
 set DATE = `echo ${CDATE} | cut -c1-8`
@@ -35,16 +40,16 @@ set ic_dst_file = ${ic_dir}/gfs_data.tile7_vi_v2.5.nc # IC after VI
 mkdir -p $vital_dir_obs
 mkdir -p $vital_dir_processed
 
-# === prepare text files for VI
+# === Step 1: prepare text files for VI
 
-# --- step 1: find if there is any ATL tc at the given time 
+# --- find if there is any ATL tc at the given time (using tcutil_multistorm_sort_xx.py) 
 
 ${vi_tool_dir}/ush/tcutil_multistorm_sort_jet_rt.py ${CDATE} L $min_wind $max_lat > tmpvit # select TCs
 more tmpvit
 grep -q -F "NHC" "tmpvit" && mv tmpvit ${obs_vital} || echo 'TC not found'
 rm -f tmpvit
 
-# --- step 2: if so, prepare the text files that can be used for VI 
+# --- if so, prepare the text files that can be used for VI (using prepare_tc_files.py)
 
 # -d: date          -> current date as CDATE
 # -w: min_wind      -> min Vmax for VI
@@ -54,12 +59,14 @@ rm -f tmpvit
 # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'
 
 # addtional step on Jet: prepare ps.nc in netCDF3 for tracking
+# this file is used by a function in prepare_tc_files.py
 chmod 755 ${ic_dir} # KGao 07/24/23: strange permission issue
 rm -rf ${ic_dir}/ps_nc3.nc
 if ( ! -f ${ic_dir}/ps_nc3.nc) then
    ncks -C -v ps,geolon,geolat -3 ${ic_dir}/gfs_data.tile7.nc ${ic_dir}/ps_nc3.nc
 endif
 
+# this step will generates the two text files used by VI
 if ( -f ${obs_vital} && -f ${ic_src_file} ) then
    # note the wind and lat criteria are duplicated in script below
    ${vi_driver_dir}/prepare_tc_files.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed
@@ -67,11 +74,11 @@ endif
 
 rm -rf ${ic_dir}/ps_nc3.nc
 
-# === trigger VI script
+# === Step 2. trigger VI script
 
+# tcvitals.vi can be used as a flag; if it exists for a given date&time, VI is needed for this case
 if (-f ${vital_dir_processed}/${CDATE}/tcvitals.vi ) then
 
-     # safety check?
      if ( ! -f $ic_dst_file ) then
        set atcf_file = `cd ${vital_dir_processed}/${CDATE} && ls *atcf*`
        set STORMID=`echo $atcf_file  | cut -c1-3`
