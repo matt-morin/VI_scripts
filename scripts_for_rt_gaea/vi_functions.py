@@ -5,6 +5,12 @@ from netCDF4 import Dataset
 import glob
 import os
 
+def read_nc(file, var_name):
+    f1 = Dataset(file, 'r')
+    var  = f1.variables[var_name][:]
+    var  = np.squeeze(var)
+    return var
+
 def map_dvar_to_cgrid(dvar):
 
     # map increment field (dvar) on a-grid to c-grid
@@ -62,33 +68,12 @@ def read_tcvitals(filename):
         tc_tmp = {}
         L = line.split()
         tc_id = str(counter)+'_'+L[1]
-
         tc_tmp['lat'] = float(L[5][:-1])/10
         tc_tmp['lon'] = float(L[6][:-1])/10
-        tc_tmp['roci'] = float(L[11])
         tc_tmp['vmax'] = float(L[12])
-        tc_tmp['rmw'] = float(L[13])
-
-        r1,r2,r3,r4 = float(L[14]),float(L[15]),float(L[16]),float(L[17])
-
-        #print r1,r2,r3,r4
-
-        r34 = 0.
-        count = 0.
-        for r_ in [r1, r2, r3, r4]:
-            if r_ > 0 and r_ < 900:
-               r34 += r_
-               count += 1
-
-        if count >= 1:
-           r34 = r34/count
-
-        tc_tmp['r34_list'] = [r1,r2,r3,r4]
-        tc_tmp['r34_mean'] = r34
-
         tc_dict[tc_id] = tc_tmp
         counter += 1
-    return tc_dict 
+    return tc_dict
 
 def find_center(var, lon, lat, tc_lon, tc_lat):
     dlon = lon - (360-tc_lon)
@@ -106,7 +91,7 @@ def find_center(var, lon, lat, tc_lon, tc_lat):
     lon_sel = lon[ic-scope:ic+scope, jc-scope:jc+scope]
     lat_sel = lat[ic-scope:ic+scope, jc-scope:jc+scope]
 
-    detected_center =  np.where(var_sel == np.nanmin(var_sel))
+    detected_center = np.where(var_sel == np.nanmin(var_sel))
 
     ic_new, jc_new = detected_center[0][0], detected_center[1][0]
 
@@ -118,9 +103,9 @@ def find_center(var, lon, lat, tc_lon, tc_lat):
 def detect_tc_center_from_ic(ic_dir, tc_lon, tc_lat, opt=0):
 
     file1 = 'gfs_data.tile7.nc'
-    file2 = 'sfc_data.tile7.nc'
+    #file2 = 'sfc_data.tile7.nc'
     f1 = Dataset(ic_dir+'/'+file1, 'r')
-    f2 = Dataset(ic_dir+'/'+file2, 'r')
+    #f2 = Dataset(ic_dir+'/'+file2, 'r')
 
     if opt == 0:
        lon = f1.variables['geolon'][:]

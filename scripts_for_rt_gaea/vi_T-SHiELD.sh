@@ -1,27 +1,38 @@
 #!/bin/bash
-#SBATCH --output=/home/role.rthfip-gfdl/NGGPS/vi_driver/scripts_for_rt/stdout/%x.o%j
+#SBATCH --output=/autofs/ncrc-svm1_home1/Kun.Gao/VI/VI_scripts/scripts_for_rt_gaea/stdout/%x.o%j
 #SBATCH --job-name=tshield_vi
-#SBATCH --account=hfip-gfdl
+#SBATCH --account=gfdl_w
 ##SBATCH --qos=urgent
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
 #SBATCH --time=02:00:00
-#SBATCH --partition=bigmem
-#SBATCH --mail-user=kun.gao@noaa.gov
-#SBATCH --mail-type=fail 
+##SBATCH --mail-user=kun.gao@noaa.gov
+##SBATCH --mail-type=fail 
+#SBATCH --partition=batch
+#SBATCH --cluster=c5
 
-set -xe # do not allow the job to proceed if VI failed
-#set -x # this script should trigger forecast job even if VI does not work
+#set -xe # do not allow the job to proceed if VI failed
+set -x
 
 ulimit
+
+# KGao 07/02/2024 fix
+source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
 
 #===============================================================================
 # setting up
 
-export version=v2.5
-export exec=exec_${version}
 #export CDATE=2022092000
 #export STORMID=07L
+
+# -- paramters to be changed by the user
+export version=v2.5
+export exec=exec_${version}
+
+export HOMEhafs=/autofs/ncrc-svm1_home1/${USER}/VI/HAFS_tools/ # consistent with HAFS naming
+export ic_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/SHiELD_INPUT/SHiELD_IC_v16/C768r10n4_atl_new/
+export vital_base_dir=/autofs/ncrc-svm1_home1/${USER}/VI/VI_scripts/scripts_for_rt_gaea/tc_vitals/processed/
+export work_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/
 
 # -- vi options
 export zind_str=29 # 28 - same as v1
@@ -39,23 +50,19 @@ export ibgs=2 # cold start
 export iflag_cold=1 # cold start
 
 # -- data dir
-export vital_dir=/home/${USER}/NGGPS/vi_driver/scripts_for_rt/tc_vitals/processed/ # !!!
-export ic_base_dir=/mnt/lfs1/HFIP/hfip-gfdl/${USER}/SHiELD_INPUT_DATA/variable.v202101/C768r10n4_atl_new
-export grid_dir=${ic_base_dir}/GRID/ # !!!
+export grid_dir=${ic_base_dir}/INPUT/ # !!!
 export ic_dir_src=${ic_base_dir}/${CDATE:0:8}.${CDATE:8:2}Z_IC/
 export ic_dir_dst=${ic_dir_src}
 export ic_file_ori=${ic_dir_src}/gfs_data.tile7.nc
 export ic_file_dst=${ic_dir_dst}/gfs_data.tile7_vi_${version}.nc # !!!
 
 # -- work dir
-export work_dir_base=/mnt/lfs1/HFIP/hfip-gfdl/${USER}/vi_work_rt2023/ # !!!
-export work_dir=${work_dir_base}/${CDATE}/${STORMID}
+export work_dir=${work_base_dir}/${CDATE}/${STORMID}
 export work_dir_ic=${work_dir}/data/ic/
 export work_dir_vital=${work_dir}/data/vital/
 export work_dir_vi=${work_dir}/atm_vi/
 
 # -- code dir
-export HOMEhafs=/home/${USER}/NGGPS/hafs_tools/
 export USHhafs=${HOMEhafs}/ush
 export EXEChafs=${HOMEhafs}/sorc/hafs_tools.fd/${exec}/
 export FIXhafs=${HOMEhafs}/fix
@@ -87,8 +94,8 @@ module load modulefile.hafs.jet > /dev/null 2>&1
 # prepare data 
 
 # tc files
-cp $vital_dir/$CDATE/tcvitals.vi                 $work_dir_vital/
-cp $vital_dir/$CDATE/${STORMID}*atcfunix.all     $work_dir_vital/
+cp $vital_base_dir/$CDATE/tcvitals.vi                 $work_dir_vital/
+cp $vital_base_dir/$CDATE/${STORMID}*atcfunix.all     $work_dir_vital/
 
 # prepare ic files
 ln -sf ${grid_dir}/grid_spec.nest02.tile7.nc     ${work_dir_ic}/grid_spec.nc
@@ -339,34 +346,33 @@ if [ ${do_post} -gt 0 ]; then
 
  # --- step 3: check
  # if ic files after VI differs from ori file, then VI was successfully 
- #module load cdo
- #mkdir -p $work_dir/data/check
- #cd $work_dir/data/check
- #cdo selvar,u_w -sellevel,128 ${work_dir_ic}/gfs_data.nc u_before.nc
- #cdo selvar,u_w -sellevel,128 ${work_dir_ic}/gfs_data_vi.nc u_after.nc
- #cdo selvar,sphum -sellevel,128 ${work_dir_ic}/gfs_data.nc sphum_before.nc
- #cdo selvar,sphum -sellevel,128 ${work_dir_ic}/gfs_data_vi.nc sphum_after.nc
+ module load cdo
+ mkdir -p $work_dir/data/check
+ cd $work_dir/data/check
+ cdo selvar,u_w -sellevel,128 ${work_dir_ic}/gfs_data.nc u_before.nc
+ cdo selvar,u_w -sellevel,128 ${work_dir_ic}/gfs_data_vi.nc u_after.nc
+ cdo selvar,sphum -sellevel,128 ${work_dir_ic}/gfs_data.nc sphum_before.nc
+ cdo selvar,sphum -sellevel,128 ${work_dir_ic}/gfs_data_vi.nc sphum_after.nc
 
- #testok1=`cdo -diff u_before.nc u_after.nc | sed -n '/records differ$/p' | tr -s " " | cut -f2 -d" "`
- #testok2=`cdo -diff sphum_before.nc sphum_after.nc | sed -n '/records differ$/p' | tr -s " " | cut -f2 -d" "`
+ testok1=`cdo -diff u_before.nc u_after.nc | sed -n '/records differ$/p' | tr -s " " | cut -f2 -d" "`
+ testok2=`cdo -diff sphum_before.nc sphum_after.nc | sed -n '/records differ$/p' | tr -s " " | cut -f2 -d" "`
 
- #if [ ${testok1} -eq 1 ]  && [ ${testok2} -eq 1 ]; then
- #   echo 'VI went successfully'
+ if [ ${testok1} -eq 1 ]  && [ ${testok2} -eq 1 ]; then
+    echo 'VI went successfully'
     cp ${work_dir_ic}/gfs_data_vi.nc ${ic_file_dst} 
- #else
- #   echo 'VI did not work'
- #fi
+ else
+    echo 'VI did not work'
+ fi
 
 fi
 
 #===============================================================================
-# trigger forecast job regardless if VI is successfully
+# trigger forecast job regardless of whether VI is successful
+# uncomment the lines below to submit the forecast job
 
-# submit the forecast job
-echo 'VI is done; submitting forecast job'
-runscript=${HOME}/NGGPS/T-SHiELD_rt2023/SHiELD_run/JETrt/submit_forecast_with_VI.sh
-runmode='realtime' # the runscript checks if runmode needs to be adjusted
-${runscript} -y "${CDATE}" -m "${runmode}"
-#${runscript} -y "${CDATE}" -a "${acct_name}" -q "${USRDEF_QOS}" -m "${runmode}" -n 999
+#echo 'VI is done; submitting forecast job'
+#runscript=${HOME}/NGGPS/T-SHiELD_rt2023/SHiELD_run/JETrt/submit_forecast_with_VI.sh
+#runmode='realtime' # the runscript checks if runmode needs to be adjusted
+#${runscript} -y "${CDATE}" -m "${runmode}"
 
 
