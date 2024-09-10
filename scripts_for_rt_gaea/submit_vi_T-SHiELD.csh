@@ -1,5 +1,9 @@
-#!/bin/tcsh 
+#!/bin/tcsh
 module load python/3.9
+
+set echo
+set verbose
+unlimit
 
 # This script drives the VI-related workflow for the RT T-SHiELD
 # It is triggerd by the IC creation script once ICs are generated
@@ -8,16 +12,19 @@ module load python/3.9
 #  - create two TC text files to be used by VI
 #  - launch the VI script
 
-# === get the model initialization date&time from command-line argument 
+# === get the model initialization date&time from command-line argument
 set CDATE = $1
 
 # === directory to be specified by the user
 
-# vi code and scripts 
-set vi_base = /autofs/ncrc-svm1_home1/${USER}/VI/
+# vi code and scripts
+set vi_base = ${HOME}/NGGPS/VI_dev
+cd ${vi_base} || exit 1
 
 # ic files
-set ic_base = /gpfs/f5/gfdl_w/scratch/${USER}/SHiELD_INPUT/SHiELD_IC_v16/C768r10n4_atl_new/
+set GRID = 'C768r10n4_atl_new'
+#set ic_base = /gpfs/f5/gfdl_w/scratch/${USER}/SHiELD_INPUT/SHiELD_IC_v16/${GRID}/
+set ic_base = /gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/${GRID}/
 
 # vi criteria (will be passed to python scripts that generated TC files)
 set min_wind = 30.
@@ -30,7 +37,7 @@ set vi_tool_dir = ${vi_base}/HAFS_tools/
 set vi_driver_dir = ${vi_base}/VI_scripts/scripts_for_rt_gaea/
 set vi_script = ${vi_driver_dir}/vi_T-SHiELD.sh
 
-# tc files 
+# tc files
 set vital_base = ${vi_driver_dir}/tc_vitals/
 set vital_dir_obs = ${vital_base}/observed_all/
 set vital_dir_processed = ${vital_base}/processed/
@@ -51,7 +58,7 @@ mkdir -p $vital_dir_processed
 
 if ( ! -f ${vital_dir_processed}/${CDATE}/tcvitals.vi ) then
 
-# --- find if there is any ATL tc at the given time (using tcutil_multistorm_sort_xx.py) 
+# --- find if there is any ATL tc at the given time (using tcutil_multistorm_sort_xx.py)
 
   ${vi_tool_dir}/ush/tcutil_multistorm_sort_gfdl.py ${CDATE} L $min_wind $max_lat > tmpvit # select TCs
   more tmpvit
@@ -70,6 +77,8 @@ if ( ! -f ${vital_dir_processed}/${CDATE}/tcvitals.vi ) then
   if ( -f ${obs_vital} && -f ${ic_src_file} ) then
      # note the wind and lat criteria are duplicated in script below
      ${vi_driver_dir}/prepare_tc_files.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed
+  else
+    echo "NOTE: Not calling ${vi_driver_dir}/prepare_tc_files.py"
   endif
 
 endif
@@ -78,23 +87,20 @@ endif
 
 # tcvitals.vi can be used as a flag; if it exists for a given date&time, VI is needed for this case
 if ( -f ${vital_dir_processed}/${CDATE}/tcvitals.vi ) then
- 
-   if ( ! -f $ic_dst_file ) then
-      set atcf_file = `cd ${vital_dir_processed}/${CDATE} && ls *atcf*`
-      set STORMID=`echo $atcf_file  | cut -c1-3`
-      echo 'submitting' $CDATE, $STORMID
-      
-      sbatch --job-name=vi_ic_${CDATE} --export=CDATE=${CDATE},STORMID=${STORMID},ALL ${vi_script}
 
-   endif
+  if ( ! -f $ic_dst_file ) then
+     set atcf_file = `cd ${vital_dir_processed}/${CDATE} && ls *atcf*`
+     set STORMID=`echo $atcf_file  | cut -c1-3`
+     echo 'submitting' $CDATE, $STORMID
+     sbatch --job-name=vi_ic_${CDATE} --output=${ic_dir}/vi_ic_${GRID}_${CDATE}.out --export=NONE,CDATE=${CDATE},STORMID=${STORMID} ${vi_script}
+  endif
 
-# if VI not triggered, trigger forecast job from here
-#else
-    # submit the forecast job
-#    echo 'No need for VI; submitting forecast job for' $CDATE
-#    set runscript = ${HOME}/NGGPS/T-SHiELD_rt2023/SHiELD_run/JETrt/submit_forecast_with_VI.sh
-#    set runmode = 'realtime' # the runscript checks if runmode needs to be adjusted
-#    ${runscript} -y "${CDATE}" -m "${runmode}"
-    #${runscript} -y "${CDATE}" -a "${acct_name}" -q "${USRDEF_QOS}" -m "${runmode}" -n 999
+else # if VI not triggered, trigger forecast job from here
+
+  # submit the forecast job
+  echo 'No need for VI; submitting forecast job for' $CDATE
+  set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+  set runmode = 'realtime' # the runscript checks if runmode needs to be adjusted
+  ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
 
 endif

@@ -10,7 +10,7 @@ from vi_functions import *
 
 # INPUT needed
 
-# -d: date          -> current date as CDATE 
+# -d: date          -> current date as CDATE
 # -w: min_wind      -> min Vmax for VI
 # -l: max_lat       -> max initial lat for VI
 # -i: ic_base       -> base dir for ic, e.g., '/lustre/f2/dev/gfdl/Kun.Gao/SHiELD_IC_v16/'+grid+'/'
@@ -45,12 +45,12 @@ except getopt.GetoptError:
 # --- hardcoded paramters below
 filter_domain = 10. # vi input domain size in deg
 res = 1/33. # model res
-min_dist_dom = 0.1 # min distance of the selected box corners from the nested domain edges 
-grid_file = ic_base + '/INPUT/grid_spec.nest02.tile7.nc' # grid file for T-SHiELD
+min_dist_dom = 0.1 # min distance of the selected box corners from the nested domain edges
+grid_file = ic_base + '/GRID/grid_spec.nest02.tile7.nc' # grid file for T-SHiELD
 
 # --- Main program begins
 
-if not os.path.exists(vital_dir_out): 
+if not os.path.exists(vital_dir_out):
    os.mkdir(vital_dir_out)
 min_index_dom = int(min_dist_dom/res)
 
@@ -69,7 +69,7 @@ if True:
     find_good_tc = False
     for i in range(len(tc_id_list)):
       tc_id = tc_id_list[i]
-      tc_lon = tc_dict[tc_id]['lon']   
+      tc_lon = tc_dict[tc_id]['lon']
       tc_lat = tc_dict[tc_id]['lat']
       tc_vmax = tc_dict[tc_id]['vmax']
 
@@ -97,28 +97,40 @@ if True:
          if  min(de1,dw1,ds1,dn1) > min_index_dom \
          and min(de2,dw2,ds2,dn2) > min_index_dom \
          and min(de3,dw3,ds3,dn3) > min_index_dom \
-         and min(de4,dw4,ds4,dn4) > min_index_dom: 
+         and min(de4,dw4,ds4,dn4) > min_index_dom:
 
            find_good_tc = True
 
+         else:
+
+           print ('VILOG: =============================================')
+           print ('VILOG: STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
+           print ('VILOG: This TC is too close to the domain edge.')
+           print ('VILOG: min_index_dom=',min_index_dom)
+           print ('VILOG: min(de1,dw1,ds1,dn1)=',min(de1,dw1,ds1,dn1))
+           print ('VILOG: min(de2,dw2,ds2,dn2)=',min(de2,dw2,ds2,dn2))
+           print ('VILOG: min(de3,dw3,ds3,dn3)=',min(de3,dw3,ds3,dn3))
+           print ('VILOG: min(de4,dw4,ds4,dn4)=',min(de4,dw4,ds4,dn4))
+           print ('VILOG: =============================================')
+
       # stop looping all TCs at this initialization time
       if find_good_tc:
-         break 
+         break
 
     if find_good_tc:
       stormID = tc_id[2:]
 
-      #print 'STORMID, OBS VMAX:', stormID, tc_vmax
+      print ('VILOG: STORMID, OBS VMAX:', stormID, tc_vmax)
 
       # detect TC in IC - location of min pres
-      #print 'Obs lat, lon:', tc_lat, tc_lon
+      print ('Obs lat, lon:', tc_lat, tc_lon)
 
       tc_lon_mod, tc_lat_mod = detect_tc_center_from_ic(ic_dir, tc_lon, tc_lat)
-      #print 'Obs lat, lon:', tc_lat, tc_lon 
-      #print 'Mod lat, lon:', tc_lat_mod, tc_lon_mod
+      print ('VILOG: Obs lat, lon:', tc_lat, tc_lon)
+      print ('VILOG: Mod lat, lon:', tc_lat_mod, tc_lon_mod)
       if abs(tc_lat_mod-tc_lat) >0.5 or  abs(tc_lon_mod-tc_lon) > 0.5:
          print ('Check this case more carefully ...')
-     
+
       # write out txt files
       do_write_out = True
       if do_write_out:
@@ -131,19 +143,19 @@ if True:
               os.remove(out_file1)
            if os.path.exists(out_file2):
               os.remove(out_file2)
-           os.rmdir(out_dir) 
+           os.rmdir(out_dir)
         os.mkdir(out_dir)
 
         # generate obs tc vital file
         obs_string = "NHC  "+stormID
-        #print obs_string, vital_file, out_file1
+        #print (obs_string, vital_file, out_file1)
         cmd = 'grep "{}" {} > {}'.format(obs_string, vital_file, out_file1)
         os.system(cmd)
 
         # generate model atcf file
         lat_str = str(int(np.round(tc_lat_mod*10,0)))
         lon_str = str(int(np.round(tc_lon_mod*10,0)))
-        #print lat_str, lon_str
+        #print (lat_str, lon_str)
         # Note: only lat,lon info is acutually used in VI as of 01/12/2022; intensity and R34 not important
         mod_string = "AL, {}, {}, 03, HAFS, 000, {}N,  {}W,  00,  000, XX,  34, NEQ, 0000, 0000, 0000, 0000".format(stormID[:2], date, lat_str, lon_str)
 

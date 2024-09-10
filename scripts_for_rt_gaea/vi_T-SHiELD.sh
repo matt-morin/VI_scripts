@@ -1,13 +1,12 @@
 #!/bin/bash
-#SBATCH --output=/autofs/ncrc-svm1_home1/Kun.Gao/VI/VI_scripts/scripts_for_rt_gaea/stdout/%x.o%j
+#SBATCH --output=/autofs/ncrc-svm1_home2/Matthew.Morin/NGGPS/VI_dev/VI_scripts/scripts_for_rt_gaea/stdout/%x.out
 #SBATCH --job-name=tshield_vi
 #SBATCH --account=gfdl_w
-##SBATCH --qos=urgent
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
 #SBATCH --time=02:00:00
-##SBATCH --mail-user=kun.gao@noaa.gov
-##SBATCH --mail-type=fail 
+#SBATCH --mail-user=matthew.morin@noaa.gov
+#SBATCH --mail-type=fail
 #SBATCH --partition=batch
 #SBATCH --cluster=c5
 
@@ -29,9 +28,9 @@ source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
 export version=v2.5
 export exec=exec_${version}
 
-export HOMEhafs=/autofs/ncrc-svm1_home1/${USER}/VI/HAFS_tools/ # consistent with HAFS naming
-export ic_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/SHiELD_INPUT/SHiELD_IC_v16/C768r10n4_atl_new/
-export vital_base_dir=/autofs/ncrc-svm1_home1/${USER}/VI/VI_scripts/scripts_for_rt_gaea/tc_vitals/processed/
+export HOMEhafs=${HOME}/NGGPS/VI_dev/HAFS_tools/ # consistent with HAFS naming
+export ic_base_dir=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n4_atl_new/
+export vital_base_dir=${HOME}/NGGPS/VI_dev/VI_scripts/scripts_for_rt_gaea/tc_vitals/processed/
 export work_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/
 
 # -- vi options
@@ -50,7 +49,7 @@ export ibgs=2 # cold start
 export iflag_cold=1 # cold start
 
 # -- data dir
-export grid_dir=${ic_base_dir}/INPUT/ # !!!
+export grid_dir=${ic_base_dir}/GRID/ # !!!
 export ic_dir_src=${ic_base_dir}/${CDATE:0:8}.${CDATE:8:2}Z_IC/
 export ic_dir_dst=${ic_dir_src}
 export ic_file_ori=${ic_dir_src}/gfs_data.tile7.nc
@@ -91,7 +90,7 @@ module load modulefile.hafs.jet > /dev/null 2>&1
 #module list
 
 #===============================================================================
-# prepare data 
+# prepare data
 
 # tc files
 cp $vital_base_dir/$CDATE/tcvitals.vi                 $work_dir_vital/
@@ -150,7 +149,7 @@ fi
 
 
 #===============================================================================
-# VI steps 
+# VI steps
 
 work_dir_split=${work_dir_vi}/split_init/
 work_dir_pert=${work_dir_vi}/anl_pert_init/
@@ -162,7 +161,7 @@ if [ ${do_split} -gt 0 ]; then
 
   rm -rf ${work_dir_split}
   mkdir -p ${work_dir_split}
-  cd ${work_dir_split}	
+  cd ${work_dir_split}
 
   # 1.1 -- create_trak
   # input
@@ -195,7 +194,7 @@ if [ ${do_split} -gt 0 ]; then
   ln -sf storm_radius                  fort.85
 
   ln -sf ${EXEChafs}/hafs_vi_split.x ./
-  echo ${gesfhr} $ibgs $vmax_vit $iflag_cold 1.0 | ./hafs_vi_split.x 
+  echo ${gesfhr} $ibgs $vmax_vit $iflag_cold 1.0 | ./hafs_vi_split.x
 
   # KGao - check if command executed successfully
   if [ $? -eq 0 ]; then
@@ -228,11 +227,11 @@ if [ ${do_pert} -gt 0 ]; then
   ln -sf storm_sym fort.23
 
   ln -sf ${EXEChafs}/hafs_vi_anl_pert.x ./
-  echo 6 ${basin} ${initopt} | ./hafs_vi_anl_pert.x 
+  echo 6 ${basin} ${initopt} | ./hafs_vi_anl_pert.x
   # KGao - check if command executed successfully
   if [ $? -eq 0 ]; then
     echo "=== VI anl_pert step executed successfully"
-  else 
+  else
     echo "=== VI anl_pert step failed"
     #exit 1
   fi
@@ -269,7 +268,7 @@ if [ ${do_combine} -gt 0 ]; then
   # KGao - check if command executed successfully
   if [ $? -eq 0 ]; then
     echo "=== VI anl_combine step executed successfully"
-  else 
+  else
     echo "=== VI anl_combine step failed"
     #exit 1
   fi
@@ -279,12 +278,12 @@ if [ ${do_combine} -gt 0 ]; then
   fi
 fi
 
-# --- 4. anl_enhance step 
+# --- 4. anl_enhance step
 
 if [ ${do_enhance} -gt 0 ]; then
-  
+
   cd ${work_dir_combine}
-	
+
   if [ -s storm_env_new ]; then
 
     # input
@@ -309,7 +308,7 @@ if [ ${do_enhance} -gt 0 ]; then
     # KGao - check if command executed successfully
     if [ $? -eq 0 ]; then
       echo "=== VI anl_enhance step executed successfully"
-    else 
+    else
       echo "=== VI anl_enhance step failed"
       #exit 1
     fi
@@ -324,7 +323,7 @@ fi
 
 if [ ${do_post} -gt 0 ]; then
 
-  # --- part 1:  merge the data in the selected box back to the whole domain 
+  # --- part 1:  merge the data in the selected box back to the whole domain
   cp ${ic_file_for_vi} ${work_dir_ic}/gfs_data_after_vi.nc
   ${APRUNC} ${DATOOL} hafsvi_postproc_ic --in_file=${work_dir_vi}/anl_storm/storm_anl \
                                --debug_level=11 --interpolation_points=4 \
@@ -336,16 +335,16 @@ if [ ${do_post} -gt 0 ]; then
 #                              [--debug_level=10 (default is 1) ]
 #                              [--interpolation_points=5 (default is 4, range 1-500) ]
 
- # --- part 2: update source ic file 
- # update var adjusted by VI (wind increment on a-grid will be remapped on to c-grid) 
- # here we put the final-adjusted IC file in the dst dir directly 
- cp $ic_file_ori ${work_dir_ic}/gfs_data_vi.nc 
+ # --- part 2: update source ic file
+ # update var adjusted by VI (wind increment on a-grid will be remapped on to c-grid)
+ # here we put the final-adjusted IC file in the dst dir directly
+ cp $ic_file_ori ${work_dir_ic}/gfs_data_vi.nc
  ${APRUNC1} ${DATOOL} hafsvi_update_nc --in_dir=${work_dir_ic} \
                                        --zsel=${zind_str} \
                                        --out_file=${work_dir_ic}/gfs_data_vi.nc
 
  # --- step 3: check
- # if ic files after VI differs from ori file, then VI was successfully 
+ # if ic files after VI differs from ori file, then VI was successfully
  module load cdo
  mkdir -p $work_dir/data/check
  cd $work_dir/data/check
@@ -359,9 +358,10 @@ if [ ${do_post} -gt 0 ]; then
 
  if [ ${testok1} -eq 1 ]  && [ ${testok2} -eq 1 ]; then
     echo 'VI went successfully'
-    cp ${work_dir_ic}/gfs_data_vi.nc ${ic_file_dst} 
+    cp ${work_dir_ic}/gfs_data_vi.nc ${ic_file_dst}
+    rm -rf ${work_dir}
  else
-    echo 'VI did not work'
+    echo 'ERROR: VI did not work'
  fi
 
 fi
@@ -370,9 +370,8 @@ fi
 # trigger forecast job regardless of whether VI is successful
 # uncomment the lines below to submit the forecast job
 
-#echo 'VI is done; submitting forecast job'
-#runscript=${HOME}/NGGPS/T-SHiELD_rt2023/SHiELD_run/JETrt/submit_forecast_with_VI.sh
-#runmode='realtime' # the runscript checks if runmode needs to be adjusted
+echo 'VI is done; submitting forecast job'
+runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+runmode='realtime' # the runscript checks if runmode needs to be adjusted
 #${runscript} -y "${CDATE}" -m "${runmode}"
-
-
+${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
