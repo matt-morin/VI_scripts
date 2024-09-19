@@ -120,11 +120,7 @@ if True:
         print ('VILOG: =============================================')
 
       ## stop looping all TCs at this initialization time
-      if find_good_tc:
-        print ('=============================================')
-        print ('STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
-        print ('MJM: This is where prepare_tc_files.py would break out of the loop')
-        print ('=============================================')
+      #if find_good_tc:
       #   break
 
     if find_good_tc:
@@ -160,7 +156,7 @@ if True:
 
         # generate obs tc vital file
         obs_string = "NHC  "+stormID
-        print (obs_string, vital_file, out_file1)
+        #print (obs_string, vital_file, out_file1)
         cmd = 'grep "{}" {} > {}'.format(obs_string, vital_file, out_file1)
         os.system(cmd)
 
