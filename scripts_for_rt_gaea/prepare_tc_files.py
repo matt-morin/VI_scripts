@@ -15,7 +15,7 @@ from vi_functions import *
 # -l: max_lat       -> max initial lat for VI
 # -i: ic_base       -> base dir for ic, e.g., '/lustre/f2/dev/gfdl/Kun.Gao/SHiELD_IC_v16/'+grid+'/'
 # -f: vital_file    -> obs vital messages as a txt file, e.g., vital_base+'observed_all/tcvitals_'+date+'.txt'
-# -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'
+# -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'+stormID+'/'
 
 # --- get the arguments from the command line
 argv = sys.argv[1:]
@@ -59,63 +59,73 @@ grid_lont = read_nc(grid_file, 'grid_lont')
 ic_dir = ic_base + date[:-2]+'.'+date[-2:]+'Z_IC'
 
 if True:
-    tc_dict = read_tcvitals(vital_file)
-    tc_id_list = list(tc_dict.keys())
-    tc_id_list.sort()
+  tc_dict = read_tcvitals(vital_file)
+  tc_id_list = list(tc_dict.keys())
+  tc_id_list.sort()
 
     # check if the selected TC is most suitable for VI
     # if more than one TC, starts from the strongest
 
+  for i in range(len(tc_id_list)):
     find_good_tc = False
-    for i in range(len(tc_id_list)):
-      tc_id = tc_id_list[i]
-      tc_lon = tc_dict[tc_id]['lon']
-      tc_lat = tc_dict[tc_id]['lat']
-      tc_vmax = tc_dict[tc_id]['vmax']
+    tc_id = tc_id_list[i]
+    tc_lon = tc_dict[tc_id]['lon']
+    tc_lat = tc_dict[tc_id]['lat']
+    tc_vmax = tc_dict[tc_id]['vmax']
 
-      # filter domain corners
-      lat_p1 = tc_lat + filter_domain/2.
-      lon_p1 = tc_lon + filter_domain/2.
-      lat_p2 = tc_lat + filter_domain/2.
-      lon_p2 = tc_lon - filter_domain/2.
-      lat_p3 = tc_lat - filter_domain/2.
-      lon_p3 = tc_lon + filter_domain/2.
-      lat_p4 = tc_lat - filter_domain/2.
-      lon_p4 = tc_lon - filter_domain/2.
+    # filter domain corners
+    lat_p1 = tc_lat + filter_domain/2.
+    lon_p1 = tc_lon + filter_domain/2.
+    lat_p2 = tc_lat + filter_domain/2.
+    lon_p2 = tc_lon - filter_domain/2.
+    lat_p3 = tc_lat - filter_domain/2.
+    lon_p3 = tc_lon + filter_domain/2.
+    lat_p4 = tc_lat - filter_domain/2.
+    lon_p4 = tc_lon - filter_domain/2.
 
-      # Here we select the TC for VI
-      # level 1 criterion: TC needs to be strong enough and not located too far north
-      # level 2 criterion: TC needs to be far enough from the domain edges
+    # Here we select the TC for VI
+    # level 1 criterion: TC needs to be strong enough and not located too far north
+    # level 2 criterion: TC needs to be far enough from the domain edges
 
-      if tc_vmax >=min_wind and tc_lat <=max_lat:
+    if tc_vmax >=min_wind and tc_lat <=max_lat:
+      de1,dw1,ds1,dn1 = find_min_dist_tc_center_and_domain_edges(360-lon_p1, lat_p1, grid_lont, grid_latt)
+      de2,dw2,ds2,dn2 = find_min_dist_tc_center_and_domain_edges(360-lon_p2, lat_p2, grid_lont, grid_latt)
+      de3,dw3,ds3,dn3 = find_min_dist_tc_center_and_domain_edges(360-lon_p3, lat_p3, grid_lont, grid_latt)
+      de4,dw4,ds4,dn4 = find_min_dist_tc_center_and_domain_edges(360-lon_p4, lat_p4, grid_lont, grid_latt)
 
-         de1,dw1,ds1,dn1 = find_min_dist_tc_center_and_domain_edges(360-lon_p1, lat_p1, grid_lont, grid_latt)
-         de2,dw2,ds2,dn2 = find_min_dist_tc_center_and_domain_edges(360-lon_p2, lat_p2, grid_lont, grid_latt)
-         de3,dw3,ds3,dn3 = find_min_dist_tc_center_and_domain_edges(360-lon_p3, lat_p3, grid_lont, grid_latt)
-         de4,dw4,ds4,dn4 = find_min_dist_tc_center_and_domain_edges(360-lon_p4, lat_p4, grid_lont, grid_latt)
+      if  min(de1,dw1,ds1,dn1) > min_index_dom \
+      and min(de2,dw2,ds2,dn2) > min_index_dom \
+      and min(de3,dw3,ds3,dn3) > min_index_dom \
+      and min(de4,dw4,ds4,dn4) > min_index_dom:
+        find_good_tc = True
+        print ('VILOG: =============================================')
+        print ('VILOG: find_good_tc = ',find_good_tc)
+        print ('VILOG: STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
+        print ('VILOG: min_index_dom=',min_index_dom)
+        print ('VILOG: min(de1,dw1,ds1,dn1)=',min(de1,dw1,ds1,dn1))
+        print ('VILOG: min(de2,dw2,ds2,dn2)=',min(de2,dw2,ds2,dn2))
+        print ('VILOG: min(de3,dw3,ds3,dn3)=',min(de3,dw3,ds3,dn3))
+        print ('VILOG: min(de4,dw4,ds4,dn4)=',min(de4,dw4,ds4,dn4))
+        print ('VILOG: =============================================')
+      else:
+        print ('VILOG: =============================================')
+        print ('VILOG: find_good_tc = ',find_good_tc)
+        print ('VILOG: STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
+        print ('VILOG: This TC is too close to the domain edge.')
+        print ('VILOG: min_index_dom=',min_index_dom)
+        print ('VILOG: min(de1,dw1,ds1,dn1)=',min(de1,dw1,ds1,dn1))
+        print ('VILOG: min(de2,dw2,ds2,dn2)=',min(de2,dw2,ds2,dn2))
+        print ('VILOG: min(de3,dw3,ds3,dn3)=',min(de3,dw3,ds3,dn3))
+        print ('VILOG: min(de4,dw4,ds4,dn4)=',min(de4,dw4,ds4,dn4))
+        print ('VILOG: =============================================')
 
-         if  min(de1,dw1,ds1,dn1) > min_index_dom \
-         and min(de2,dw2,ds2,dn2) > min_index_dom \
-         and min(de3,dw3,ds3,dn3) > min_index_dom \
-         and min(de4,dw4,ds4,dn4) > min_index_dom:
-
-           find_good_tc = True
-
-         else:
-
-           print ('VILOG: =============================================')
-           print ('VILOG: STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
-           print ('VILOG: This TC is too close to the domain edge.')
-           print ('VILOG: min_index_dom=',min_index_dom)
-           print ('VILOG: min(de1,dw1,ds1,dn1)=',min(de1,dw1,ds1,dn1))
-           print ('VILOG: min(de2,dw2,ds2,dn2)=',min(de2,dw2,ds2,dn2))
-           print ('VILOG: min(de3,dw3,ds3,dn3)=',min(de3,dw3,ds3,dn3))
-           print ('VILOG: min(de4,dw4,ds4,dn4)=',min(de4,dw4,ds4,dn4))
-           print ('VILOG: =============================================')
-
-      # stop looping all TCs at this initialization time
+      ## stop looping all TCs at this initialization time
       if find_good_tc:
-         break
+        print ('=============================================')
+        print ('STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
+        print ('MJM: This is where prepare_tc_files.py would break out of the loop')
+        print ('=============================================')
+      #   break
 
     if find_good_tc:
       stormID = tc_id[2:]
@@ -134,7 +144,7 @@ if True:
       # write out txt files
       do_write_out = True
       if do_write_out:
-        out_dir = vital_dir_out + date + '/'
+        out_dir = vital_dir_out + date + '/' + stormID + '/'
         out_file1 = out_dir + 'tcvitals.vi'
         out_file2 = out_dir + stormID + '.' + date + '.trak.atcfunix.all'
 
@@ -144,11 +154,13 @@ if True:
            if os.path.exists(out_file2):
               os.remove(out_file2)
            os.rmdir(out_dir)
+        if not os.path.exists(vital_dir_out + date):
+           os.mkdir(vital_dir_out + date)
         os.mkdir(out_dir)
 
         # generate obs tc vital file
         obs_string = "NHC  "+stormID
-        #print (obs_string, vital_file, out_file1)
+        print (obs_string, vital_file, out_file1)
         cmd = 'grep "{}" {} > {}'.format(obs_string, vital_file, out_file1)
         os.system(cmd)
 
@@ -156,9 +168,10 @@ if True:
         lat_str = str(int(np.round(tc_lat_mod*10,0)))
         lon_str = str(int(np.round(tc_lon_mod*10,0)))
         #print (lat_str, lon_str)
-        # Note: only lat,lon info is acutually used in VI as of 01/12/2022; intensity and R34 not important
+        # Note: only lat,lon info is actually used in VI as of 01/12/2022; intensity and R34 not important
         mod_string = "AL, {}, {}, 03, HAFS, 000, {}N,  {}W,  00,  000, XX,  34, NEQ, 0000, 0000, 0000, 0000".format(stormID[:2], date, lat_str, lon_str)
 
         f = open(out_file2, "w")
         n = f.write(mod_string)
         f.close()
+€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP:q
