@@ -65,7 +65,7 @@ do
   fi
   export ic_file_dst=${ic_dir_dst}/gfs_data.tile7_vi_${version}.nc # !!!
   if [ ${stormnum} -gt 9 ]; then
-    echo "WARNING: stormnum(${stormnum})>9! Need to account for gfs_data.tile7_vi_${version}.nc in the forecast script!!!"
+    echo "VILOG ${STORMID}: WARNING: stormnum(${stormnum})>9! Need to account for gfs_data.tile7_vi_${version}.nc in the forecast script!!!"
     exit 1
   fi
 
@@ -217,9 +217,9 @@ do
 
     # KGao - check if command executed successfully
     if [ $? -eq 0 ]; then
-      echo "=== VI split step executed successfully"
+      echo "VILOG ${STORMID}: === VI split step executed successfully"
     else
-      echo "=== VI split step failed"
+      echo "VILOG ${STORMID}: === VI split step failed"
       #exit 1
     fi
 
@@ -249,9 +249,9 @@ do
     echo 6 ${basin} ${initopt} | ./hafs_vi_anl_pert.x
     # KGao - check if command executed successfully
     if [ $? -eq 0 ]; then
-      echo "=== VI anl_pert step executed successfully"
+      echo "VILOG ${STORMID}: === VI anl_pert step executed successfully"
     else
-      echo "=== VI anl_pert step failed"
+      echo "VILOG ${STORMID}: === VI anl_pert step failed"
       #exit 1
     fi
   fi
@@ -286,9 +286,9 @@ do
     echo ${gesfhr} ${basin} ${gfs_flag} ${initopt} | ./hafs_vi_anl_combine.x
     # KGao - check if command executed successfully
     if [ $? -eq 0 ]; then
-      echo "=== VI anl_combine step executed successfully"
+      echo "VILOG ${STORMID}: === VI anl_combine step executed successfully"
     else
-      echo "=== VI anl_combine step failed"
+      echo "VILOG ${STORMID}: === VI anl_combine step failed"
       #exit 1
     fi
 
@@ -326,9 +326,9 @@ do
       echo 6 ${basin} ${iflag_cold} | ./hafs_vi_anl_enhance.x
       # KGao - check if command executed successfully
       if [ $? -eq 0 ]; then
-        echo "=== VI anl_enhance step executed successfully"
+        echo "VILOG ${STORMID}: === VI anl_enhance step executed successfully"
       else
-        echo "=== VI anl_enhance step failed"
+        echo "VILOG ${STORMID}: === VI anl_enhance step failed"
         #exit 1
       fi
       cp -p storm_anl_enhance storm_anl
@@ -375,12 +375,12 @@ do
    testok2=`cdo -diff sphum_before.nc sphum_after.nc | sed -n '/records differ$/p' | tr -s " " | cut -f2 -d" "`
 
    if [ ${testok1} -eq 1 ]  && [ ${testok2} -eq 1 ]; then
-      echo 'VI went successfully'
+      echo "VILOG ${STORMID}: VI went successfully"
       ncatted -h -O -a vi_history,global,a,c," ${STORMID}" ${work_dir_ic}/gfs_data_vi.nc
       cp ${work_dir_ic}/gfs_data_vi.nc ${ic_file_dst}
       rm -rf ${work_dir}
    else
-      echo 'ERROR: VI did not work'
+      echo "VILOG ${STORMID}: ERROR: VI did not work"
    fi
 
   fi
@@ -391,8 +391,8 @@ done # End of STORMID loop
 # trigger forecast job regardless of whether VI is successful
 # uncomment the lines below to submit the forecast job
 
-echo 'VI is done; submitting forecast job'
+echo 'VILOG: VI is done; Submitting forecast job'
 runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-runmode='realtime' # the runscript checks if runmode needs to be adjusted
+runmode='realtime'
 cd $(dirname ${runscript})
 ${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
