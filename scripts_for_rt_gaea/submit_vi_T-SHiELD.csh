@@ -63,7 +63,7 @@ mkdir -p $vital_dir_processed
 # this step will generate the two text files used by VI
 
 set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???/tcvitals.vi)
-if ( -e $vitfiles[1] ) then
+if ( ! -e $vitfiles[1] ) then
 
   # --- find if there is any ATL tc at the given time (using tcutil_multistorm_sort_xx.py)
 
@@ -83,9 +83,10 @@ if ( -e $vitfiles[1] ) then
 
   if ( -f ${obs_vital} && -f ${ic_src_file} ) then
      # note the wind and lat criteria are duplicated in script below
+     echo "VILOG: prepare_tc_files.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed"
      ${vi_driver_dir}/prepare_tc_files.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed
   else
-    echo "VILOG: Not calling ${vi_driver_dir}/prepare_tc_files.py"
+    echo "VILOG: Not calling ${vi_driver_dir}/prepare_tc_files.py [obs_vital(${obs_vital}) and/or ic_src_file(${ic_src_file}) not available]"
   endif
 
 endif
