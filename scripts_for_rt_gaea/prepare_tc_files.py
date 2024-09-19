@@ -174,4 +174,3 @@ if True:
         f = open(out_file2, "w")
         n = f.write(mod_string)
         f.close()
-€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP€kP:q
