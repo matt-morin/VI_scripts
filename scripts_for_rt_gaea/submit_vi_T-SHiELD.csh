@@ -85,7 +85,7 @@ if ( -e $vitfiles[1] ) then
      # note the wind and lat criteria are duplicated in script below
      ${vi_driver_dir}/prepare_tc_files.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed
   else
-    echo "NOTE: Not calling ${vi_driver_dir}/prepare_tc_files.py"
+    echo "VILOG: Not calling ${vi_driver_dir}/prepare_tc_files.py"
   endif
 
 endif
@@ -100,7 +100,7 @@ if ( -e $vitfiles[1] ) then
   set STORMIDlist = `find ${vital_dir_processed}/${CDATE} -type f -name 'tcvitals.vi' -printf '%T@ %Tc %p\n' | sort -n | awk -F/ '{print $(NF-1)}' | tr '\n' ' '`
 
   if ( ! -e $ic_dst_file[1] ) then
-    echo 'submitting' $CDATE, $STORMIDlist
+    echo "VILOG: Submitting ${CDATE}, ${STORMIDlist}"
     sbatch --job-name=vi_dev_ic_${GRID}_${CDATE} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},STORMIDlist="${STORMIDlist}" --qos ${USRDEF_QOS} ${vi_script}
   else
     exit 1
@@ -109,7 +109,7 @@ if ( -e $vitfiles[1] ) then
 else # if VI not triggered, trigger forecast job from here
 
   # submit the forecast job
-  echo 'No need for VI; submitting forecast job for' $CDATE
+  echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
   set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
   set runmode = 'realtime'
   ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
