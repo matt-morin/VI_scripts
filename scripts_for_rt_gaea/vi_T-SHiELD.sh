@@ -395,4 +395,4 @@ echo 'VILOG: VI is done; Submitting forecast job'
 runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
 runmode='realtime'
 cd $(dirname ${runscript})
-${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
+${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999 -b 'RUN_T-SHiELD_k24dv1_MultiVI.csh'
