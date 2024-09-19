@@ -98,26 +98,17 @@ if True:
       and min(de3,dw3,ds3,dn3) > min_index_dom \
       and min(de4,dw4,ds4,dn4) > min_index_dom:
         find_good_tc = True
-        print ('VILOG: =============================================')
-        print ('VILOG: find_good_tc = ',find_good_tc)
-        print ('VILOG: STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
-        print ('VILOG: min_index_dom=',min_index_dom)
-        print ('VILOG: min(de1,dw1,ds1,dn1)=',min(de1,dw1,ds1,dn1))
-        print ('VILOG: min(de2,dw2,ds2,dn2)=',min(de2,dw2,ds2,dn2))
-        print ('VILOG: min(de3,dw3,ds3,dn3)=',min(de3,dw3,ds3,dn3))
-        print ('VILOG: min(de4,dw4,ds4,dn4)=',min(de4,dw4,ds4,dn4))
-        print ('VILOG: =============================================')
       else:
-        print ('VILOG: =============================================')
-        print ('VILOG: find_good_tc = ',find_good_tc)
-        print ('VILOG: STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
-        print ('VILOG: This TC is too close to the domain edge.')
-        print ('VILOG: min_index_dom=',min_index_dom)
-        print ('VILOG: min(de1,dw1,ds1,dn1)=',min(de1,dw1,ds1,dn1))
-        print ('VILOG: min(de2,dw2,ds2,dn2)=',min(de2,dw2,ds2,dn2))
-        print ('VILOG: min(de3,dw3,ds3,dn3)=',min(de3,dw3,ds3,dn3))
-        print ('VILOG: min(de4,dw4,ds4,dn4)=',min(de4,dw4,ds4,dn4))
-        print ('VILOG: =============================================')
+        find_good_tc = False
+        print ('VILOG ',tc_id[2:],': This TC is too close to the domain edge.')
+
+      print ('VILOG ',tc_id[2:],': find_good_tc = ',find_good_tc)
+      print ('VILOG ',tc_id[2:],': STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
+      print ('VILOG ',tc_id[2:],': min_index_dom=',min_index_dom)
+      print ('VILOG ',tc_id[2:],': min(de1,dw1,ds1,dn1)=',min(de1,dw1,ds1,dn1))
+      print ('VILOG ',tc_id[2:],': min(de2,dw2,ds2,dn2)=',min(de2,dw2,ds2,dn2))
+      print ('VILOG ',tc_id[2:],': min(de3,dw3,ds3,dn3)=',min(de3,dw3,ds3,dn3))
+      print ('VILOG ',tc_id[2:],': min(de4,dw4,ds4,dn4)=',min(de4,dw4,ds4,dn4))
 
       ## stop looping all TCs at this initialization time
       #if find_good_tc:
@@ -126,16 +117,16 @@ if True:
     if find_good_tc:
       stormID = tc_id[2:]
 
-      print ('VILOG: STORMID, OBS VMAX:', stormID, tc_vmax)
+      print ('VILOG ',stormID,': STORMID, OBS VMAX:', stormID, tc_vmax)
 
       # detect TC in IC - location of min pres
       print ('Obs lat, lon:', tc_lat, tc_lon)
 
       tc_lon_mod, tc_lat_mod = detect_tc_center_from_ic(ic_dir, tc_lon, tc_lat)
-      print ('VILOG: Obs lat, lon:', tc_lat, tc_lon)
-      print ('VILOG: Mod lat, lon:', tc_lat_mod, tc_lon_mod)
+      print ('VILOG ',stormID,': Obs lat, lon:', tc_lat, tc_lon)
+      print ('VILOG ',stormID,': Mod lat, lon:', tc_lat_mod, tc_lon_mod)
       if abs(tc_lat_mod-tc_lat) >0.5 or  abs(tc_lon_mod-tc_lon) > 0.5:
-         print ('Check this case more carefully ...')
+         print ('VILOG ',stormID,': Check this case more carefully...')
 
       # write out txt files
       do_write_out = True
