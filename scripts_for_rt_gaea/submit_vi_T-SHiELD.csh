@@ -15,6 +15,12 @@ unlimit
 # === get the model initialization date&time from command-line argument
 set CDATE = $1
 
+if (! $?SLURM_JOB_QOS) then
+  setenv USRDEF_QOS 'normal'
+else
+  setenv USRDEF_QOS $SLURM_JOB_QOS
+endif
+
 # === directory to be specified by the user
 
 # vi code and scripts
@@ -48,31 +54,32 @@ set DATE = `echo ${CDATE} | cut -c1-8`
 set hh = `echo ${CDATE} | cut -c9-10`
 set ic_dir = ${ic_base}/${DATE}.${hh}Z_IC/
 set ic_src_file = ${ic_dir}/gfs_data.tile7.nc # IC without VI
-set ic_dst_file = ${ic_dir}/gfs_data.tile7_vi_v2.5.nc # IC after VI
+set nonomatch ic_dst_file=(${ic_dir}/gfs_data.tile7_vi_?.nc) # IC after VI
 
 mkdir -p $vital_dir_obs
 mkdir -p $vital_dir_processed
 
 # === Step 1: prepare text files for VI
-# this step will generates the two text files used by VI
+# this step will generate the two text files used by VI
 
-if ( ! -f ${vital_dir_processed}/${CDATE}/tcvitals.vi ) then
+set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???/tcvitals.vi)
+if ( -e $vitfiles[1] ) then
 
-# --- find if there is any ATL tc at the given time (using tcutil_multistorm_sort_xx.py)
+  # --- find if there is any ATL tc at the given time (using tcutil_multistorm_sort_xx.py)
 
   ${vi_tool_dir}/ush/tcutil_multistorm_sort_gfdl.py ${CDATE} L $min_wind $max_lat > tmpvit # select TCs
   more tmpvit
   grep -q -F "NHC" "tmpvit" && mv tmpvit ${obs_vital} || echo 'TC not found'
   rm -f tmpvit
 
-# --- if so, prepare the text files that can be used for VI (using prepare_tc_files.py)
+  # --- if so, prepare the text files that can be used for VI (using prepare_tc_files.py)
 
-# -d: date          -> current date as CDATE
-# -w: min_wind      -> min Vmax for VI
-# -l: max_lat       -> max initial lat for VI
-# -i: ic_base       -> base dir for ic, e.g., '/lustre/f2/dev/gfdl/Kun.Gao/SHiELD_IC_v16/'+grid+'/'
-# -f: vital_file    -> obs vital messages as a txt file, e.g., vital_base+'observed_all/tcvitals_'+date+'.txt'
-# -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'
+  # -d: date          -> current date as CDATE
+  # -w: min_wind      -> min Vmax for VI
+  # -l: max_lat       -> max initial lat for VI
+  # -i: ic_base       -> base dir for ic, e.g., '/lustre/f2/dev/gfdl/Kun.Gao/SHiELD_IC_v16/'+grid+'/'
+  # -f: vital_file    -> obs vital messages as a txt file, e.g., vital_base+'observed_all/tcvitals_'+date+'.txt'
+  # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'
 
   if ( -f ${obs_vital} && -f ${ic_src_file} ) then
      # note the wind and lat criteria are duplicated in script below
@@ -86,13 +93,17 @@ endif
 # === Step 2. trigger VI script
 
 # tcvitals.vi can be used as a flag; if it exists for a given date&time, VI is needed for this case
-if ( -f ${vital_dir_processed}/${CDATE}/tcvitals.vi ) then
+set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???/tcvitals.vi)
+if ( -e $vitfiles[1] ) then
 
-  if ( ! -f $ic_dst_file ) then
-     set atcf_file = `cd ${vital_dir_processed}/${CDATE} && ls *atcf*`
-     set STORMID=`echo $atcf_file  | cut -c1-3`
-     echo 'submitting' $CDATE, $STORMID
-     sbatch --job-name=vi_ic_${CDATE} --output=${ic_dir}/vi_ic_${GRID}_${CDATE}.out --export=NONE,CDATE=${CDATE},STORMID=${STORMID} ${vi_script}
+  /bin/ls -l ${vital_dir_processed}/${CDATE}/???/tcvitals.vi
+  set STORMIDlist = `find ${vital_dir_processed}/${CDATE} -type f -name 'tcvitals.vi' -printf '%T@ %Tc %p\n' | sort -n | awk -F/ '{print $(NF-1)}' | tr '\n' ' '`
+
+  if ( ! -e $ic_dst_file[1] ) then
+    echo 'submitting' $CDATE, $STORMIDlist
+    sbatch --job-name=vi_dev_ic_${GRID}_${CDATE} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},STORMIDlist="${STORMIDlist}" --qos ${USRDEF_QOS} ${vi_script}
+  else
+    exit 1
   endif
 
 else # if VI not triggered, trigger forecast job from here
@@ -100,7 +111,7 @@ else # if VI not triggered, trigger forecast job from here
   # submit the forecast job
   echo 'No need for VI; submitting forecast job for' $CDATE
   set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-  set runmode = 'realtime' # the runscript checks if runmode needs to be adjusted
+  set runmode = 'realtime'
   ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
 
 endif
