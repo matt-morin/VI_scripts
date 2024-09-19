@@ -64,6 +64,10 @@ do
     export ic_file_ori=${ic_dir_src}/gfs_data.tile7.nc
   fi
   export ic_file_dst=${ic_dir_dst}/gfs_data.tile7_vi_${version}.nc # !!!
+  if [ ${stormnum} -gt 9 ]; then
+    echo "WARNING: stormnum(${stormnum})>9! Need to account for gfs_data.tile7_vi_${version}.nc in the forecast script!!!"
+    exit 1
+  fi
 
   # -- work dir
   export work_dir=${work_base_dir}/${CDATE}/${STORMID}
