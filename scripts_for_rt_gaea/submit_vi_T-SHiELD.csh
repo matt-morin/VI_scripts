@@ -24,7 +24,7 @@ endif
 # === directory to be specified by the user
 
 # vi code and scripts
-set vi_base = ${HOME}/NGGPS/VI_dev
+set vi_base = ${HOME}/NGGPS/VI
 cd ${vi_base} || exit 1
 
 # ic files
@@ -113,6 +113,6 @@ else # if VI not triggered, trigger forecast job from here
   echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
   set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
   set runmode = 'realtime'
-  ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999 -b 'RUN_T-SHiELD_k24dv1_MultiVI.csh'
+  ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999'
 
 endif

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --output=/autofs/ncrc-svm1_home2/Matthew.Morin/NGGPS/VI_dev/VI_scripts/scripts_for_rt_gaea/stdout/%x.out
+#SBATCH --output=/autofs/ncrc-svm1_home2/Matthew.Morin/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/stdout/%x.out
 #SBATCH --job-name=tshield_vi
 #SBATCH --account=gfdl_w
 #SBATCH --nodes=1
@@ -34,9 +34,9 @@ do
   ((stormnum = stormnum + 1))
   export version=${stormnum}
 
-  export HOMEhafs=${HOME}/NGGPS/VI_dev/HAFS_tools/ # consistent with HAFS naming
+  export HOMEhafs=${HOME}/NGGPS/VI/HAFS_tools/ # consistent with HAFS naming
   export ic_base_dir=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n4_atl_new/
-  export vital_base_dir=${HOME}/NGGPS/VI_dev/VI_scripts/scripts_for_rt_gaea/tc_vitals/processed/
+  export vital_base_dir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/tc_vitals/processed/
   export work_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/
 
   # -- vi options
@@ -395,4 +395,4 @@ echo 'VILOG: VI is done; Submitting forecast job'
 runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
 runmode='realtime'
 cd $(dirname ${runscript})
-${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999 -b 'RUN_T-SHiELD_k24dv1_MultiVI.csh'
+${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
