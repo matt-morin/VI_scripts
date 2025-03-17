@@ -132,9 +132,11 @@ if ( -e $vitfiles[1] ) then
     sbatch --job-name=vi_dev_ic_${GRID}_${CDATE} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},STORMIDlist="${STORMIDlist}" --qos ${USRDEF_QOS} ${vi_script}
     if ( ${status} != 0 ) then
       notify_error "Error launching vi_dev_ic_${GRID}_${CDATE} batch job"
+      exit 1
     endif
   else
     notify_error "Error: vi_dev_ic_${GRID}_${CDATE} not launched because $ic_dst_file[1] is not available"
+    exit 1
   endif
 
 else # if VI not triggered, trigger forecast job from here
