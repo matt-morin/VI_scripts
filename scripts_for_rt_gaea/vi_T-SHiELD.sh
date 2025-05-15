@@ -390,7 +390,7 @@ done # End of STORMID loop
 # uncomment the lines below to submit the forecast job
 
 echo 'VILOG: VI is done; Submitting forecast job'
-runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-runmode='realtime'
-cd $(dirname ${runscript})
-${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
+#runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+#runmode='realtime'
+#cd $(dirname ${runscript})
+#${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
