@@ -25,10 +25,11 @@
 #   ---
 #
 # TODO:
-#   ---
+#   --- Test notify_error calls after both python scripts
 #
 # UPDATES:
 #   [2025MAR17] Added documentation header; Added notify_error function
+#   [2025MAR21] Better handled missing tmpvit file
 # =================================================
 
 # Define an alias that sends all given arguments ($!:*) as the error message
@@ -95,9 +96,19 @@ if ( ! -e $vitfiles[1] ) then
   # --- find if there is any ATL tc at the given time (using tcutil_multistorm_sort_xx.py)
 
   ${vi_tool_dir}/ush/tcutil_multistorm_sort_gfdl.py ${CDATE} L $min_wind $max_lat > tmpvit # select TCs
-  more tmpvit
-  grep -q -F "NHC" "tmpvit" && mv tmpvit ${obs_vital} || echo 'TC not found'
-  rm -f tmpvit
+  if ( ${status} != 0 ) then # MJM --- Testing/TODO
+    notify_error "Error in tcutil_multistorm_sort_gfdl.py for ${CDATE}"
+  endif
+
+  #if ( -f tmpvit ) then
+  #if ( -e tmpvit ) then
+  if ( ! -z tmpvit ) then
+    more tmpvit
+    grep -q -F "NHC" "tmpvit" && mv tmpvit ${obs_vital} || echo 'VILOG: TC not found'
+    rm -f tmpvit
+  else
+    echo 'VILOG: TC not found'
+  endif
 
   # --- if so, prepare the text files that can be used for VI (using prepare_tc_files.py)
 
@@ -109,9 +120,12 @@ if ( ! -e $vitfiles[1] ) then
   # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'
 
   if ( -f ${obs_vital} && -f ${ic_src_file} ) then
-     # note the wind and lat criteria are duplicated in script below
-     echo "VILOG: prepare_tc_files.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed"
-     ${vi_driver_dir}/prepare_tc_files.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed
+    # note the wind and lat criteria are duplicated in script below
+    echo "VILOG: prepare_tc_files.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed"
+    ${vi_driver_dir}/prepare_tc_files.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed
+    if ( ${status} != 0 ) then # MJM --- Testing/TODO
+      notify_error "Error in prepare_tc_files.py for ${CDATE}"
+    endif
   else
     echo "VILOG: Not calling ${vi_driver_dir}/prepare_tc_files.py [obs_vital(${obs_vital}) and/or ic_src_file(${ic_src_file}) not available]"
   endif
@@ -135,16 +149,16 @@ if ( -e $vitfiles[1] ) then
       exit 1
     endif
   else
-    notify_error "Error: vi_dev_ic_${GRID}_${CDATE} not launched because $ic_dst_file[1] is not available"
+    notify_error "Error: vi_dev_ic_${GRID}_${CDATE} not launched because $ic_dst_file[1] is already available"
     exit 1
   endif
 
-else # if VI not triggered, trigger forecast job from here
-
-  # submit the forecast job
-  echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
-  set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-  set runmode = 'realtime'
-  ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
+#else # if VI not triggered, trigger forecast job from here
+#
+#  # submit the forecast job
+#  echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
+#  set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+#  set runmode = 'realtime'
+#  ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
 
 endif
