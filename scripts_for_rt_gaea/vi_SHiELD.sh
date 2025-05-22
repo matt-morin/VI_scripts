@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --output=/autofs/ncrc-svm1_home2/Matthew.Morin/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/stdout/%x.out
-#SBATCH --job-name=tshield_vi
+#SBATCH --job-name=shield_vi
 #SBATCH --account=gfdl_w
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
@@ -10,7 +10,7 @@
 #SBATCH --partition=batch
 #SBATCH --cluster=c5
 
-PS4='+ [$(date +"%H:%M:%S")] vi_T-SHiELD.sh line ${LINENO}: '
+PS4='+ [$(date +"%H:%M:%S")] vi_SHiELD.sh line ${LINENO}: '
 
 source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1 # KGao 07/02/2024 fix
 ulimit
@@ -22,6 +22,7 @@ set -x
 
 #export CDATE=2022092000
 #export STORMIDlist=07L
+#export ic_tile=5
 
 # -- paramters to be changed by the user
 #export version=2.5
@@ -35,15 +36,15 @@ do
   export version=${stormnum}
 
   export HOMEhafs=${HOME}/NGGPS/VI/HAFS_tools/ # consistent with HAFS naming
-  export ic_base_dir=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n4_atl_new/
-  export vital_base_dir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/tc_vitals/processed/
+  export ic_base_dir=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/global.v202311/C1536/
+  export vital_base_dir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/tc_vitals/SHiELD/processed/
   export work_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/
 
   # -- vi options
   export zind_str=29 # 28 - same as v1
   export deg_box1=10
   export deg_box2=10
-  export res_box1=0.02
+  export res_box1=0.05
   export res_box2=0.20
 
   export nest_grids=0 # ndom=nestdoms+1
@@ -59,13 +60,13 @@ do
   export ic_dir_src=${ic_base_dir}/${CDATE:0:8}.${CDATE:8:2}Z_IC/
   export ic_dir_dst=${ic_dir_src}
   if [ ${stormnum} -gt 1 ]; then
-    export ic_file_ori=${ic_dir_src}/gfs_data.tile7_vi_$((stormnum-1)).nc
+    export ic_file_ori=${ic_dir_src}/gfs_data.tile${ic_tile}_vi_$((stormnum-1)).nc
   else
-    export ic_file_ori=${ic_dir_src}/gfs_data.tile7.nc
+    export ic_file_ori=${ic_dir_src}/gfs_data.tile${ic_tile}.nc
   fi
-  export ic_file_dst=${ic_dir_dst}/gfs_data.tile7_vi_${version}.nc # !!!
+  export ic_file_dst=${ic_dir_dst}/gfs_data.tile${ic_tile}_vi_${version}.nc # !!!
   if [ ${stormnum} -gt 9 ]; then
-    echo "VILOG ${STORMID}: WARNING: stormnum(${stormnum})>9! Need to account for gfs_data.tile7_vi_${version}.nc in the forecast script!!!"
+    echo "VILOG ${STORMID}: WARNING: stormnum(${stormnum})>9! Need to account for gfs_data.tile${ic_tile}_vi_${version}.nc in the forecast script!!!"
     exit 1
   fi
 
@@ -113,10 +114,10 @@ do
   cp $vital_base_dir/$CDATE/${STORMID}/${STORMID}*atcfunix.all     $work_dir_vital/
 
   # prepare ic files
-  ln -sf ${grid_dir}/grid_spec.nest02.tile7.nc     ${work_dir_ic}/grid_spec.nc
+  ln -sf ${grid_dir}/grid_spec.tile${ic_tile}.nc            ${work_dir_ic}/grid_spec.nc
   ln -sf ${ic_dir_src}/gfs_ctrl.nc                 ${work_dir_ic}/gfs_ctrl.nc
-  ln -sf ${ic_dir_src}/sfc_data.tile7.nc           ${work_dir_ic}/sfc_data.nc
-  #ln -sf ${ic_dir_src}/gfs_data.tile7.nc           ${work_dir_ic}/gfs_data.nc
+  ln -sf ${ic_dir_src}/sfc_data.tile${ic_tile}.nc           ${work_dir_ic}/sfc_data.nc
+  #ln -sf ${ic_dir_src}/gfs_data.tile${ic_tile}.nc           ${work_dir_ic}/gfs_data.nc
   ln -sf ${ic_file_ori}                            ${work_dir_ic}/gfs_data.nc
 
   tcvital=${work_dir_vital}/tcvitals.vi
@@ -201,8 +202,8 @@ do
     # input
     ln -sf ${tcvital} fort.11
     ln -sf ./trak.fnl.all fort.30
-    ln -sf ../prep_init/vi_inp_${deg_box1}deg0p02.bin ./fort.26
-    ln -sf ../prep_init/vi_inp_${deg_box2}deg0p20.bin ./fort.46
+    ln -sf ../prep_init/vi_inp_${deg_box1}deg${res_box1/\./p}.bin ./fort.26
+    ln -sf ../prep_init/vi_inp_${deg_box2}deg${res_box2/\./p}.bin ./fort.46
     # output
     ln -sf storm_env                     fort.56
     ln -sf rel_inform                    fort.52
@@ -211,7 +212,7 @@ do
     ln -sf storm_radius                  fort.85
 
     ln -sf ${EXEChafs}/hafs_vi_split.x ./
-    echo ${gesfhr} $ibgs $vmax_vit $iflag_cold 1.0 | ./hafs_vi_split.x
+    echo ${gesfhr} $ibgs $vmax_vit $iflag_cold 2.5 | ./hafs_vi_split.x
 
     # KGao - check if command executed successfully
     if [ $? -eq 0 ]; then
@@ -233,7 +234,7 @@ do
 
     # input
     ln -sf ${tcvital} fort.11
-    ln -sf ../prep_init/vi_inp_${deg_box1}deg0p02.bin fort.46
+    ln -sf ../prep_init/vi_inp_${deg_box1}deg${res_box1/\./p}.bin fort.46
 
     ln -sf ${work_dir_split}/storm_env fort.26
     ln -sf ${work_dir_split}/storm_pert fort.71
@@ -264,7 +265,7 @@ do
 
     # input
     ln -sf ${tcvital} fort.11
-    ln -sf ../prep_init/vi_inp_${deg_box1}deg0p02.bin ./fort.46 #roughness
+    ln -sf ../prep_init/vi_inp_${deg_box1}deg${res_box1/\./p}.bin ./fort.46 #roughness
 
     ln -sf ${work_dir_split}/trak.atcfunix.tmp fort.12
     ln -sf ${work_dir_split}/trak.fnl.all fort.30
@@ -304,7 +305,7 @@ do
     if [ -s storm_env_new ]; then
 
       # input
-      #ln -sf ../prep_init/vi_inp_${deg_box1}deg0p02.bin ./fort.46 #roughness
+      #ln -sf ../prep_init/vi_inp_${deg_box1}deg${res_box1/\./p}.bin ./fort.46 #roughness
       ln -sf ${work_dir_pert}/storm_sym fort.23
       ln -sf storm_env_new fort.26 # from anl_combine step
 
@@ -390,7 +391,7 @@ done # End of STORMID loop
 # uncomment the lines below to submit the forecast job
 
 echo 'VILOG: VI is done; Submitting forecast job'
-#runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+#runscript=${HOME}/NGGPS/SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
 #runmode='realtime'
 #cd $(dirname ${runscript})
 #${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
