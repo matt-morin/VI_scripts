@@ -31,7 +31,7 @@ def map_dvar_to_cgrid(dvar):
     return dvar_w, dvar_s
 
 def selected_data_wind(xm, ym, u, v, deg_sel):
-    scope = deg_sel*33
+    scope = deg_sel*17 # MJM: "17" comes from the denominator of res (valid for 6.5-km SHiELD)
     dist = (xm**2 + ym**2)**0.5
     detected_center =  np.where(dist == np.min(dist))
     ic, jc = detected_center[0][0], detected_center[1][0]
@@ -86,7 +86,7 @@ def find_center(var, lon, lat, tc_lon, tc_lat):
     ic, jc = center[0][0], center[1][0]
 
     box_half_width = 0.5 # deg
-    res = 1./17 # res in deg
+    res = 1./17 # res in deg (MJM: Valid for 6.5-km SHiELD)
     scope = np.int(box_half_width/res)
 
     var_sel = var[ic-scope:ic+scope, jc-scope:jc+scope]
