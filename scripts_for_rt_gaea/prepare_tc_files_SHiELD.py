@@ -4,7 +4,7 @@ import os
 import sys
 import getopt
 
-from vi_functions_SHiELD import * #TODO: This needs to know ic_tile
+from vi_functions_SHiELD import *
 
 # This python script generates the TC text files needed by VI
 
@@ -44,9 +44,6 @@ try:
 except getopt.GetoptError:
     print ('wrong args')
     sys.exit(2)
-
-#from vi_functions_SHiELD import *     #TODO/TESTING
-#vi_functions_SHiELD.ic_tile = ic_tile #TODO/TESTING
 
 # --- hardcoded paramters below
 filter_domain = 10. # vi input domain size in deg

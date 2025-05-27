@@ -98,6 +98,7 @@ mkdir -p $vital_dir_processed
 # this step will generate the two text files used by VI
 
 set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???/tcvitals.vi)
+#set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???_tile?/tcvitals.vi)
 if ( ! -e $vitfiles[1] ) then
 
   # --- find if there is any ATL tc at the given time (using tcutil_multistorm_sort_xx.py)
@@ -125,6 +126,7 @@ if ( ! -e $vitfiles[1] ) then
   # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'
   # -t: ic_tile       -> tile number for ic, e.g., 1
 
+  # MJM TODO --- Start ic_tile_list loop here (you may have to add "/tile${ic_tile}/" to ${vital_dir_processed})   
   if ( -f ${obs_vital} && -f ${ic_src_file} ) then
     # note the wind and lat criteria are duplicated in script below
     echo "VILOG: prepare_tc_files_SHiELD.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed -t $ic_tile"
@@ -142,6 +144,7 @@ endif
 
 # tcvitals.vi can be used as a flag; if it exists for a given date&time, VI is needed for this case
 set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???/tcvitals.vi)
+#set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???_tile?/tcvitals.vi)
 if ( -e $vitfiles[1] ) then
 
   /bin/ls -l ${vital_dir_processed}/${CDATE}/???/tcvitals.vi
