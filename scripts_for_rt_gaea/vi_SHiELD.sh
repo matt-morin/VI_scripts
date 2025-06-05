@@ -10,16 +10,47 @@
 #SBATCH --partition=batch
 #SBATCH --cluster=c5
 
+# =================================================
+# ${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/vi_SHiELD.sh
+#   --- Created by Kun Gao and maintained by Matt Morin (UCAR/GFDL)
+#   --- This script...
+#
+# USAGE:
+#   --- Launched by submit_vi_SHiELD.csh
+#
+# INPUT:
+#   ---
+#
+# OUTPUT:
+#   ---
+#
+# NOTES:
+#   ---
+#
+# TODO:
+#   ---
+#
+# UPDATES:
+#   [2025JUN05] Added documentation header; Stdout mods.; Added BASINID and BASIN definitions (no longer hardwiring basin=AL); basin-->BASIN; Cosmetic mods.
+# =================================================
+
+echo -e "---------------------------------------------------------------------------------------------------------"
+echo -e "vvvvvvvvvvvvvvvvvvvv STARTING vi_SHiELD.sh on $(hostname) at $(date)"
+echo -e "---------------------------------------------------------------------------------------------------------\n"
+
 PS4='+ [$(date +"%H:%M:%S")] vi_SHiELD.sh line ${LINENO}: '
 
 source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1 # KGao 07/02/2024 fix
 ulimit
-#set -xe # do not allow the job to proceed if VI failed
-set -x
+
+setx=${setx:-'set -x'}
+PS4='+ [$(date +"%H:%M:%S")] vi_SHiELD.sh line ${LINENO}: '
+${setx}
+#set -e # Do not allow the job to proceed if VI failed
 
 #===============================================================================
-# setting up
-
+# ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
+# -- paramters for development/testing
 #export CDATE=2022092000
 #export STORMIDlist=07L
 #export ic_tile=5
@@ -27,6 +58,7 @@ set -x
 # -- paramters to be changed by the user
 #export version=2.5
 export exec='exec' #_${version}
+# ++++++++++++++  END  OF MAIN USER SETTINGS +++++++++++++++ #
 
 stormnum=0
 for STORMID in ${STORMIDlist}
@@ -34,6 +66,22 @@ do
 
   ((stormnum = stormnum + 1))
   export version=${stormnum}
+
+  #export BASIN=AL
+  #[MJM:2025MAY29]
+  BASINID=${STORMID:2:1}
+  case ${BASINID} in
+    L) BASIN='AL';;
+    E) BASIN='EP';;
+    C) BASIN='CP';;
+    W) BASIN='WP';;
+    S) BASIN='SH';;
+    P) BASIN='SH';;
+    A) BASIN='IO';;
+    B) BASIN='IO';;
+    *) echo "ERROR: BASINID (${BASINID}) not expected! Exiting..."
+       exit 1;;
+  esac
 
   export HOMEhafs=${HOME}/NGGPS/VI/HAFS_tools/ # consistent with HAFS naming
   export ic_base_dir=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/global.v202311/C1536/
@@ -48,7 +96,6 @@ do
   export res_box2=0.20
 
   export nest_grids=0 # ndom=nestdoms+1
-  export basin=AL
   export initopt=0
   export gfs_flag=0
   export gesfhr=6 # basically useless; only useful in setting the value for item in split.f
@@ -245,7 +292,7 @@ do
     ln -sf storm_sym fort.23
 
     ln -sf ${EXEChafs}/hafs_vi_anl_pert.x ./
-    echo 6 ${basin} ${initopt} | ./hafs_vi_anl_pert.x
+    echo 6 ${BASIN} ${initopt} | ./hafs_vi_anl_pert.x
     # KGao - check if command executed successfully
     if [ $? -eq 0 ]; then
       echo "VILOG ${STORMID}: === VI anl_pert step executed successfully"
@@ -282,7 +329,7 @@ do
     ln -sf storm_anl_combine             fort.56
 
     ln -sf ${EXEChafs}/hafs_vi_anl_combine.x ./
-    echo ${gesfhr} ${basin} ${gfs_flag} ${initopt} | ./hafs_vi_anl_combine.x
+    echo ${gesfhr} ${BASIN} ${gfs_flag} ${initopt} | ./hafs_vi_anl_combine.x
     # KGao - check if command executed successfully
     if [ $? -eq 0 ]; then
       echo "VILOG ${STORMID}: === VI anl_combine step executed successfully"
@@ -322,7 +369,7 @@ do
       ln -sf storm_anl_enhance                     fort.56
 
       ln -sf ${EXEChafs}/hafs_vi_anl_enhance.x ./
-      echo 6 ${basin} ${iflag_cold} | ./hafs_vi_anl_enhance.x
+      echo 6 ${BASIN} ${iflag_cold} | ./hafs_vi_anl_enhance.x
       # KGao - check if command executed successfully
       if [ $? -eq 0 ]; then
         echo "VILOG ${STORMID}: === VI anl_enhance step executed successfully"
@@ -395,3 +442,8 @@ echo 'VILOG: VI is done; Submitting forecast job'
 #runmode='realtime'
 #cd $(dirname ${runscript})
 #${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
+
+set +x
+echo -e "\n---------------------------------------------------------------------------------------------------------"
+echo -e "^^^^^^^^^^^^^^^^^^^^ ENDING vi_SHiELD.sh on $(hostname) at $(date)"
+echo -e "---------------------------------------------------------------------------------------------------------"
