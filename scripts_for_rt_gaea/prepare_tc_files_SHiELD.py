@@ -119,6 +119,22 @@ if True:
 
     if find_good_tc:
       stormID = tc_id[2:]
+      BASINID = stormID[2] # MJM
+      if BASINID == "L":   # MJM
+          BASIN = "AL"
+      elif BASINID == "E":
+          BASIN = "EP"
+      elif BASINID == "C":
+          BASIN = "CP"
+      elif BASINID == "W":
+          BASIN = "WP"
+      elif BASINID == "S" or BASINID == "P":
+          BASIN = "SH"
+      elif BASINID == "A" or BASINID == "B":
+          BASIN = "IO"
+      else:
+          print ("ERROR: BASINID (', BASINID, ') not expected! Exiting...")
+          sys.exit(1)
 
       print ('VILOG ',stormID,': STORMID, OBS VMAX:', stormID, tc_vmax)
 
@@ -159,7 +175,8 @@ if True:
         lon_str = str(int(np.round(tc_lon_mod*10,0)))
         #print (lat_str, lon_str)
         # Note: only lat,lon info is actually used in VI as of 01/12/2022; intensity and R34 not important
-        mod_string = "AL, {}, {}, 03, HAFS, 000, {}N,  {}W,  00,  000, XX,  34, NEQ, 0000, 0000, 0000, 0000".format(stormID[:2], date, lat_str, lon_str)
+        #mod_string = "AL, {}, {}, 03, HAFS, 000, {}N,  {}W,  00,  000, XX,  34, NEQ, 0000, 0000, 0000, 0000".format(stormID[:2], date, lat_str, lon_str)
+        mod_string = "{}, {}, {}, 03, HAFS, 000, {}N,  {}W,  00,  000, XX,  34, NEQ, 0000, 0000, 0000, 0000".format(BASIN, stormID[:2], date, lat_str, lon_str)
 
         f = open(out_file2, "w")
         n = f.write(mod_string)
