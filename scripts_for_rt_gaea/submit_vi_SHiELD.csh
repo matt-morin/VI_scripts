@@ -27,12 +27,12 @@
 # TODO:
 #   --- tcutil_multistorm_sort_gfdl.py ${CDATE} L $min_wind $max_lat > tmpvit # select TCs # MJM TODO --- Loop over $BASINID_list (order='L E C W S P A B'?)
 #       * Use case statements to determine $ic_tile_list for each $BASINID
-#   --- set max_lat = 35. # MJM TODO --- Is this number OK for all TC basins?
 #
 # UPDATES:
 #   [2025MAR17] Added documentation header; Added notify_error function
 #   [2025MAR21] Better handled missing tmpvit file
 #   [2025MAY15] Adapted from submit_vi_T-SHiELD.csh
+#   [2025JUN04] Moved active tmpvit to $tempdir; Looping tcutil_multistorm_sort_gfdl.py within $BASINID_list; Increased max_lat from 35 to 40; WIP cosmetic mods.
 # =================================================
 
 # Define an alias that sends all given arguments ($!:*) as the error message
@@ -55,12 +55,14 @@ endif
 
 # === directory to be specified by the user
 
+set tempdir = `mktemp -d`
+
 # vi code and scripts
 set vi_base = ${HOME}/NGGPS/VI
 cd ${vi_base} || exit 1
 
 # TC criteria
-set BASINID = 'L' # MJM TODO --- Loop over BASINID_list (order='L E C W S P A B'?)
+set BASINID_list = 'L E' # MJM --- 'L E C W S P A B'
 
 # ic files
 set GRID = 'C1536'
@@ -69,7 +71,7 @@ set ic_tile = 5 # MJM TODO --- Make this into a loop (dependent on $BASINID)
 
 # vi criteria (will be passed to python scripts that generated TC files)
 set min_wind = 30.
-set max_lat = 35. # MJM TODO --- Is this number OK for all TC basins?
+set max_lat = 40. #35. # MJM TODO --- Is this number OK for all TC basins?
 
 # === specific dir and file name settings
 
@@ -83,6 +85,7 @@ set vital_base = ${vi_driver_dir}/tc_vitals/SHiELD
 set vital_dir_obs = ${vital_base}/observed_all
 set vital_dir_processed = ${vital_base}/processed/
 set obs_vital = ${vital_dir_obs}/tcvitals_${CDATE}.txt # this is the obs vital at given time
+set tmpvit = ${tempdir}/tmpvit
 
 # ics
 set DATE = `echo ${CDATE} | cut -c1-8`
@@ -98,20 +101,23 @@ mkdir -p $vital_dir_processed
 # this step will generate the two text files used by VI
 
 set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???/tcvitals.vi)
+#set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/??${BASINID}/tcvitals.vi)
 #set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???_tile?/tcvitals.vi)
 if ( ! -e $vitfiles[1] ) then
 
   # --- find if there is any ATL tc at the given time (using tcutil_multistorm_sort_xx.py)
 
-  ${vi_tool_dir}/ush/tcutil_multistorm_sort_gfdl.py ${CDATE} ${BASINID} $min_wind $max_lat > tmpvit # select TCs # MJM TODO --- Loop over $BASINID_list (order='L E C W S P A B'?)    
-  if ( ${status} != 0 ) then # MJM
-    notify_error "Error in tcutil_multistorm_sort_gfdl.py for ${CDATE}"
-  endif
+  foreach BASINID ( ${BASINID_list} ) # MJM
+    ${vi_tool_dir}/ush/tcutil_multistorm_sort_gfdl.py ${CDATE} ${BASINID} $min_wind $max_lat >> ${tmpvit} # select TCs
+    if ( ${status} != 0 ) then # MJM
+      notify_error "Error in tcutil_multistorm_sort_gfdl.py for ${CDATE}"
+    endif
+  end # MJM
 
-  if ( ! -z tmpvit ) then
-    more tmpvit
-    grep -q -F "NHC" "tmpvit" && mv tmpvit ${obs_vital} || echo 'VILOG: TC not found'
-    rm -f tmpvit
+  if ( ! -z ${tmpvit} ) then
+    more ${tmpvit}
+    grep -q -F "NHC" "${tmpvit}" && mv ${tmpvit} ${obs_vital} || echo 'VILOG: TC not found'
+    rm -f ${tmpvit}
   else
     echo 'VILOG: TC not found'
   endif
@@ -126,7 +132,7 @@ if ( ! -e $vitfiles[1] ) then
   # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'
   # -t: ic_tile       -> tile number for ic, e.g., 1
 
-  # MJM TODO --- Start ic_tile_list loop here (you may have to add "/tile${ic_tile}/" to ${vital_dir_processed})   
+  # MJM TODO --- Start ic_tile_list loop here (you may have to add "/tile${ic_tile}/" to ${vital_dir_processed})
   if ( -f ${obs_vital} && -f ${ic_src_file} ) then
     # note the wind and lat criteria are duplicated in script below
     echo "VILOG: prepare_tc_files_SHiELD.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed -t $ic_tile"
@@ -144,11 +150,13 @@ endif
 
 # tcvitals.vi can be used as a flag; if it exists for a given date&time, VI is needed for this case
 set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???/tcvitals.vi)
+#set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/??${BASINID}/tcvitals.vi)
 #set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???_tile?/tcvitals.vi)
 if ( -e $vitfiles[1] ) then
 
   /bin/ls -l ${vital_dir_processed}/${CDATE}/???/tcvitals.vi
-  set STORMIDlist = `find ${vital_dir_processed}/${CDATE} -type f -name 'tcvitals.vi' -printf '%T@ %Tc %p\n' | sort -n | awk -F/ '{print $(NF-1)}' | tr '\n' ' '`
+  #/bin/ls -l ${vital_dir_processed}/${CDATE}/??${BASINID}/tcvitals.vi
+  set STORMIDlist = `find ${vital_dir_processed}/${CDATE}/??? -type f -name 'tcvitals.vi' -printf '%T@ %Tc %p\n' | sort -n | awk -F/ '{print $(NF-1)}' | tr '\n' ' '`
 
   if ( ! -e $ic_dst_file[1] ) then
     echo "VILOG: Submitting ${CDATE}, tile${ic_tile}, ${STORMIDlist}"
