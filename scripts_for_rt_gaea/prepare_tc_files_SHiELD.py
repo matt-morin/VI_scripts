@@ -75,6 +75,7 @@ if True:
     tc_lon = tc_dict[tc_id]['lon']
     tc_lat = tc_dict[tc_id]['lat']
     tc_vmax = tc_dict[tc_id]['vmax']
+    vilogstr = f'VILOG (tile{ic_tile}) {tc_id[2:]}:' # MJM
 
     # filter domain corners
     lat_p1 = tc_lat + filter_domain/2.
@@ -103,15 +104,19 @@ if True:
         find_good_tc = True
       else:
         find_good_tc = False
-        print ('VILOG ',tc_id[2:],': This TC is too close to the domain edge.')
+        print (vilogstr,' This TC is too close to the domain edge.')
 
-      print ('VILOG ',tc_id[2:],': find_good_tc = ',find_good_tc)
-      print ('VILOG ',tc_id[2:],': STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
-      print ('VILOG ',tc_id[2:],': min_index_dom=',min_index_dom)
-      print ('VILOG ',tc_id[2:],': min(de1,dw1,ds1,dn1)=',min(de1,dw1,ds1,dn1))
-      print ('VILOG ',tc_id[2:],': min(de2,dw2,ds2,dn2)=',min(de2,dw2,ds2,dn2))
-      print ('VILOG ',tc_id[2:],': min(de3,dw3,ds3,dn3)=',min(de3,dw3,ds3,dn3))
-      print ('VILOG ',tc_id[2:],': min(de4,dw4,ds4,dn4)=',min(de4,dw4,ds4,dn4))
+      print (vilogstr,' find_good_tc = ',find_good_tc)
+      print (vilogstr,' STORMID, OBS VMAX:', tc_id[2:], tc_vmax)
+      print (vilogstr,' min_index_dom=',min_index_dom)
+      print (vilogstr,' min(de1,dw1,ds1,dn1)=',min(de1,dw1,ds1,dn1))
+      print (vilogstr,' min(de2,dw2,ds2,dn2)=',min(de2,dw2,ds2,dn2))
+      print (vilogstr,' min(de3,dw3,ds3,dn3)=',min(de3,dw3,ds3,dn3))
+      print (vilogstr,' min(de4,dw4,ds4,dn4)=',min(de4,dw4,ds4,dn4))
+      print (vilogstr,' lon_p1,lat_p1 = ',lon_p1,',',lat_p1)
+      print (vilogstr,' lon_p2,lat_p2 = ',lon_p2,',',lat_p2)
+      print (vilogstr,' lon_p3,lat_p3 = ',lon_p3,',',lat_p3)
+      print (vilogstr,' lon_p4,lat_p4 = ',lon_p4,',',lat_p4)
 
       ## stop looping all TCs at this initialization time
       #if find_good_tc:
@@ -136,21 +141,22 @@ if True:
           print ("ERROR: BASINID (', BASINID, ') not expected! Exiting...")
           sys.exit(1)
 
-      print ('VILOG ',stormID,': STORMID, OBS VMAX:', stormID, tc_vmax)
+      print (vilogstr,stormID,': STORMID, OBS VMAX:', stormID, tc_vmax)
 
       # detect TC in IC - location of min pres
       print ('Obs lat, lon:', tc_lat, tc_lon)
 
       tc_lon_mod, tc_lat_mod = detect_tc_center_from_ic(ic_dir, tc_lon, tc_lat, ic_tile)
-      print ('VILOG ',stormID,': Obs lat, lon:', tc_lat, tc_lon)
-      print ('VILOG ',stormID,': Mod lat, lon:', tc_lat_mod, tc_lon_mod)
+      print (vilogstr,stormID,': Obs lat, lon:', tc_lat, tc_lon)
+      print (vilogstr,stormID,': Mod lat, lon:', tc_lat_mod, tc_lon_mod)
       if abs(tc_lat_mod-tc_lat) >0.5 or  abs(tc_lon_mod-tc_lon) > 0.5:
-         print ('VILOG ',stormID,': Check this case more carefully...')
+         print (vilogstr,stormID,': Check this case more carefully...')
 
       # write out txt files
       do_write_out = True
       if do_write_out:
-        out_dir = vital_dir_out + date + '/' + stormID + '/'
+        #out_dir = vital_dir_out + date + '/' + stormID + '/'
+        out_dir = vital_dir_out + date + '/' + stormID + '_tile' + ic_tile + '/' # MJM
         out_file1 = out_dir + 'tcvitals.vi'
         out_file2 = out_dir + stormID + '.' + date + '.trak.atcfunix.all'
 
