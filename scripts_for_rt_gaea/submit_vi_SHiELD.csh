@@ -10,6 +10,7 @@
 #
 # USAGE:
 #   --- ./submit_vi_SHiELD.csh ${YMDH}
+#   --- Can be launched using ./run_retro.sh
 #
 # INPUT:
 #   --- /gpfs/f5/gfdl_w/scratch/Matthew.Morin/NGGPS/vitals/syndat_tcvitals.${YYYY}
@@ -17,22 +18,22 @@
 #
 # OUTPUT:
 #   --- tc_vitals/SHiELD/observed_all/tcvitals_${YMDH}.txt
-#       tc_vitals/SHiELD/processed/${YMDH}/${STORMID}/tcvitals.vi
-#       tc_vitals/SHiELD/processed/${YMDH}/${STORMID}/${STORMID}.${YMDH}.trak.atcfunix.all
+#       tc_vitals/SHiELD/processed/${YMDH}/${STORMID}_tile${ic_tile}/tcvitals.vi
+#       tc_vitals/SHiELD/processed/${YMDH}/${STORMID}_tile${ic_tile}/${STORMID}.${YMDH}.trak.atcfunix.all
 #       ${ic_base}/gfs_data.tile[1-6]_vi_?.nc
 #
 # NOTES:
 #   ---
 #
 # TODO:
-#   --- tcutil_multistorm_sort_gfdl.py ${CDATE} L $min_wind $max_lat > tmpvit # select TCs # MJM TODO --- Loop over $BASINID_list (order='L E C W S P A B'?)
-#       * Use case statements to determine $ic_tile_list for each $BASINID
+#   ---
 #
 # UPDATES:
 #   [2025MAR17] Added documentation header; Added notify_error function
 #   [2025MAR21] Better handled missing tmpvit file
 #   [2025MAY15] Adapted from submit_vi_T-SHiELD.csh
-#   [2025JUN04] Moved active tmpvit to $tempdir; Looping tcutil_multistorm_sort_gfdl.py within $BASINID_list; Increased max_lat from 35 to 40; WIP cosmetic mods.
+#   [2025JUN04] Moved active tmpvit to $tempdir; Looping tcutil_multistorm_sort_gfdl.py within $BASINID_list; Increased max_lat from 35 to 40; Cosmetic mods.
+#   [2025JUN09] Finished development looping over $ic_tile_list
 # =================================================
 
 # Define an alias that sends all given arguments ($!:*) as the error message
@@ -67,7 +68,7 @@ set BASINID_list = 'L E' # MJM --- 'L E C W S P A B'
 # ic files
 set GRID = 'C1536'
 set ic_base = /gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/global.v202311/${GRID}/
-set ic_tile = 5 # MJM TODO --- Make this into a loop (dependent on $BASINID)
+set ic_tile_list = '1 5' # MJM --- Tiles 1 and 5 have been tested with this system
 
 # vi criteria (will be passed to python scripts that generated TC files)
 set min_wind = 30.
@@ -91,8 +92,6 @@ set tmpvit = ${tempdir}/tmpvit
 set DATE = `echo ${CDATE} | cut -c1-8`
 set hh = `echo ${CDATE} | cut -c9-10`
 set ic_dir = ${ic_base}/${DATE}.${hh}Z_IC/
-set ic_src_file = ${ic_dir}/gfs_data.tile${ic_tile}.nc # IC without VI
-set nonomatch ic_dst_file=(${ic_dir}/gfs_data.tile${ic_tile}_vi_?.nc) # IC after VI
 
 mkdir -p $vital_dir_obs
 mkdir -p $vital_dir_processed
@@ -100,17 +99,16 @@ mkdir -p $vital_dir_processed
 # === Step 1: prepare text files for VI
 # this step will generate the two text files used by VI
 
-set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???/tcvitals.vi)
-#set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/??${BASINID}/tcvitals.vi)
-#set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???_tile?/tcvitals.vi)
+set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???_tile?/tcvitals.vi)
 if ( ! -e $vitfiles[1] ) then
 
-  # --- find if there is any ATL tc at the given time (using tcutil_multistorm_sort_xx.py)
+  # --- Loop tcutil_multistorm_sort through the list of basins to find initially-qualifying TCs (output=${obs_vital})
 
+  rm -f ${tmpvit} # MJM safety measure
   foreach BASINID ( ${BASINID_list} ) # MJM
-    ${vi_tool_dir}/ush/tcutil_multistorm_sort_gfdl.py ${CDATE} ${BASINID} $min_wind $max_lat >> ${tmpvit} # select TCs
+    ${vi_tool_dir}/ush/tcutil_multistorm_sort_gfdl.py ${CDATE} ${BASINID} $min_wind $max_lat >> ${tmpvit}
     if ( ${status} != 0 ) then # MJM
-      notify_error "Error in tcutil_multistorm_sort_gfdl.py for ${CDATE}"
+      notify_error "Error in tcutil_multistorm_sort_gfdl.py for ${CDATE} ${BASINID}"
     endif
   end # MJM
 
@@ -133,42 +131,42 @@ if ( ! -e $vitfiles[1] ) then
   # -t: ic_tile       -> tile number for ic, e.g., 1
 
   # MJM TODO --- Start ic_tile_list loop here (you may have to add "/tile${ic_tile}/" to ${vital_dir_processed})
-  if ( -f ${obs_vital} && -f ${ic_src_file} ) then
-    # note the wind and lat criteria are duplicated in script below
-    echo "VILOG: prepare_tc_files_SHiELD.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed -t $ic_tile"
-    ${vi_driver_dir}/prepare_tc_files_SHiELD.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed -t $ic_tile
-    if ( ${status} != 0 ) then # MJM
-      notify_error "Error in prepare_tc_files_SHiELD.py for ${CDATE}"
+  foreach ic_tile ( ${ic_tile_list}  ) # MJM
+    set ic_src_file = ${ic_dir}/gfs_data.tile${ic_tile}.nc # IC without VI
+    set nonomatch ic_dst_file=(${ic_dir}/gfs_data.tile${ic_tile}_vi_?.nc) # IC after VI
+    if ( -f ${obs_vital} && -f ${ic_src_file} ) then
+      # note the wind and lat criteria are duplicated in script below
+      echo "VILOG (tile${ic_tile}): prepare_tc_files_SHiELD.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed -t $ic_tile"
+      ${vi_driver_dir}/prepare_tc_files_SHiELD.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed -t $ic_tile
+      if ( ${status} != 0 ) then # MJM
+        notify_error "Error in prepare_tc_files_SHiELD.py for ${CDATE} tile${ic_tile}"
+      endif
+    else
+      echo "VILOG (tile${ic_tile}): Not calling ${vi_driver_dir}/prepare_tc_files_SHiELD.py [obs_vital(${obs_vital}) and/or ic_src_file(${ic_src_file}) not available]"
     endif
-  else
-    echo "VILOG: Not calling ${vi_driver_dir}/prepare_tc_files_SHiELD.py [obs_vital(${obs_vital}) and/or ic_src_file(${ic_src_file}) not available]"
-  endif
+  end # MJM
 
 endif
 
 # === Step 2. trigger VI script
 
 # tcvitals.vi can be used as a flag; if it exists for a given date&time, VI is needed for this case
-set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???/tcvitals.vi)
-#set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/??${BASINID}/tcvitals.vi)
-#set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???_tile?/tcvitals.vi)
+set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???_tile?/tcvitals.vi)
 if ( -e $vitfiles[1] ) then
 
-  /bin/ls -l ${vital_dir_processed}/${CDATE}/???/tcvitals.vi
-  #/bin/ls -l ${vital_dir_processed}/${CDATE}/??${BASINID}/tcvitals.vi
-  set STORMIDlist = `find ${vital_dir_processed}/${CDATE}/??? -type f -name 'tcvitals.vi' -printf '%T@ %Tc %p\n' | sort -n | awk -F/ '{print $(NF-1)}' | tr '\n' ' '`
-
+  set VITASKlist = `/bin/ls -C1 ${vitfiles} | awk -F/ '{print $(NF-1)}' | tr '\n' ' '`
+  set nonomatch ic_dst_file=(${ic_dir}/gfs_data.tile?_vi_?.nc) # IC after VI
   if ( ! -e $ic_dst_file[1] ) then
-    echo "VILOG: Submitting ${CDATE}, tile${ic_tile}, ${STORMIDlist}"
-    set JOB_NAME = vi_ic_${GRID}_tile${ic_tile}_${CDATE}
-    sbatch --job-name=${JOB_NAME} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},STORMIDlist="${STORMIDlist}",ic_tile=${ic_tile} --qos ${USRDEF_QOS} ${vi_script}
+    echo "VILOG: Submitting ${CDATE} for ${VITASKlist}"
+    set JOB_NAME = vi_ic_${GRID}_${CDATE}
+    sbatch --job-name=${JOB_NAME} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},VITASKlist="${VITASKlist}" --qos ${USRDEF_QOS} ${vi_script}
     if ( ${status} != 0 ) then
-      notify_error "Error launching vi_dev_ic_${GRID}_${CDATE} batch job"
+      notify_error "Error launching ${JOB_NAME} batch job"
       exit 1
     endif
   else
-    notify_error "Error: vi_dev_ic_${GRID}_${CDATE} not launched because $ic_dst_file[1] is already available"
-    exit 1
+    notify_error "Error: JOB_NAME not launched because $ic_dst_file[1] is already available"
+    continue
   endif
 
 #else # if VI not triggered, trigger forecast job from here
