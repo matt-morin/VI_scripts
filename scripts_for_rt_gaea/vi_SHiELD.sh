@@ -32,7 +32,7 @@
 #
 # UPDATES:
 #   [2025JUN05] Added documentation header; Stdout mods.; Added BASINID and BASIN definitions (no longer hardwiring basin=AL); basin-->BASIN; Cosmetic mods.; Reduced wall clock from 2 hours to 45 minutes
-#   [2025JUN11] Finished development looping over $VITASKlist
+#   [2025JUN11] Finished development looping over $VITASKlist; Adjusted deg_box1, deg_box2, and res_box1 to resolve the 30 persistent crashes occurring in anl_combine
 # =================================================
 
 echo -e "---------------------------------------------------------------------------------------------------------"
@@ -103,9 +103,9 @@ for ic_tile in "${ICTILElist[@]}"; do
 
     # -- vi options
     export zind_str=29 # 28 - same as v1
-    export deg_box1=10
-    export deg_box2=10
-    export res_box1=0.05
+    export deg_box1=12   #10
+    export deg_box2=12   #10
+    export res_box1=0.04 #0.05
     export res_box2=0.20
 
     export nest_grids=0 # ndom=nestdoms+1
