@@ -32,7 +32,9 @@
 #
 # UPDATES:
 #   [2025JUN05] Added documentation header; Stdout mods.; Added BASINID and BASIN definitions (no longer hardwiring basin=AL); basin-->BASIN; Cosmetic mods.; Reduced wall clock from 2 hours to 45 minutes
-#   [2025JUN11] Finished development looping over $VITASKlist; Adjusted deg_box1, deg_box2, and res_box1 to resolve the 30 persistent crashes occurring in anl_combine; Reverted deg_box1 and deg_box2 back to 10
+#   [2025JUN11] Finished development looping over $VITASKlist; Adjusted deg_box1, deg_box2, and res_box1 to resolve the 30 persistent crashes occurring in anl_combine ["FIX1"]; Reverted deg_box1 and deg_box2 back to 10 ["FIX2"]
+#   [2025JUN13] Tested an even smaller res_box1 of 0.025 (from 0.04) ["FIX3"]
+#   [2025JUN16] Added use of new crfactor variable (but kept it at its original value)
 # =================================================
 
 echo -e "---------------------------------------------------------------------------------------------------------"
@@ -58,6 +60,7 @@ ${setx}
 # -- paramters to be changed by the user
 #export version=2.5
 export exec='exec' #_${version}
+crfactor=2.5       # Controls RDST1 in hafs_vi_split.x [orig.=2.5; can gradually incr. up to 5]
 # ++++++++++++++  END  OF MAIN USER SETTINGS +++++++++++++++ #
 
 # Extract unique tile numbers from $VITASKlist
@@ -105,7 +108,7 @@ for ic_tile in "${ICTILElist[@]}"; do
     export zind_str=29 # 28 - same as v1
     export deg_box1=10   #12 #10
     export deg_box2=10   #12 #10
-    export res_box1=0.04 #0.05
+    export res_box1=0.025 #0.04 #0.05
     export res_box2=0.20
 
     export nest_grids=0 # ndom=nestdoms+1
@@ -271,7 +274,7 @@ for ic_tile in "${ICTILElist[@]}"; do
       ln -sf storm_radius                  fort.85
 
       ln -sf ${EXEChafs}/hafs_vi_split.x ./
-      echo ${gesfhr} $ibgs $vmax_vit $iflag_cold 2.5 | ./hafs_vi_split.x
+      echo ${gesfhr} $ibgs $vmax_vit $iflag_cold ${crfactor} | ./hafs_vi_split.x #MJM
 
       # KGao - check if command executed successfully
       if [ $? -eq 0 ]; then
