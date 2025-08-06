@@ -153,12 +153,12 @@ if ( -e $vitfiles[1] ) then
     exit 1
   endif
 
-#else # if VI not triggered, trigger forecast job from here
-#
-#  # submit the forecast job
-#  echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
-#  set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-#  set runmode = 'realtime'
-#  ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
+else # if VI not triggered, trigger forecast job from here
+
+  # submit the forecast job
+  echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
+  set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+  set runmode = 'realtime'
+  ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
 
 endif
