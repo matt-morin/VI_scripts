@@ -34,6 +34,7 @@
 #   [2025MAY15] Adapted from submit_vi_T-SHiELD.csh
 #   [2025JUN04] Moved active tmpvit to $tempdir; Looping tcutil_multistorm_sort_gfdl.py within $BASINID_list; Increased max_lat from 35 to 40; Cosmetic mods.
 #   [2025JUN09] Finished development looping over $ic_tile_list
+#   [2025AUG22] Added use of $run_fcst
 # =================================================
 
 # Define an alias that sends all given arguments ($!:*) as the error message
@@ -53,6 +54,11 @@ if (! $?SLURM_JOB_QOS) then
 else
   setenv USRDEF_QOS $SLURM_JOB_QOS
 endif
+if (! $?run_fcst) then
+  setenv run_fcst 'NO' # MJM --- TODO   
+else
+  setenv run_fcst ${run_fcst}
+endif
 
 # === directory to be specified by the user
 
@@ -71,7 +77,8 @@ set ic_base = /gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/global.v2023
 set ic_tile_list = '1 5' # MJM --- Tiles 1 and 5 have been tested with this system
 
 # vi criteria (will be passed to python scripts that generated TC files)
-set min_wind = 30.
+#set min_wind = 30.
+if (! $?min_wind) set min_wind = 30.
 set max_lat = 40. #35. # MJM TODO --- Is this number OK for all TC basins?
 
 # === specific dir and file name settings
@@ -98,6 +105,9 @@ mkdir -p $vital_dir_processed
 
 # === Step 1: prepare text files for VI
 # this step will generate the two text files used by VI
+
+echo "VILOG: min_wind=${min_wind}"
+echo "VILOG: max_lat=${max_lat}"
 
 set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???_tile?/tcvitals.vi)
 if ( ! -e $vitfiles[1] ) then
@@ -159,7 +169,7 @@ if ( -e $vitfiles[1] ) then
   if ( ! -e $ic_dst_file[1] ) then
     echo "VILOG: Submitting ${CDATE} for ${VITASKlist}"
     set JOB_NAME = vi_ic_${GRID}_${CDATE}
-    sbatch --job-name=${JOB_NAME} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},VITASKlist="${VITASKlist}" --qos ${USRDEF_QOS} ${vi_script}
+    sbatch --job-name=${JOB_NAME} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},VITASKlist="${VITASKlist}",run_fcst=${run_fcst} --qos ${USRDEF_QOS} ${vi_script}
     if ( ${status} != 0 ) then
       notify_error "Error launching ${JOB_NAME} batch job"
       exit 1
@@ -169,12 +179,14 @@ if ( -e $vitfiles[1] ) then
     continue
   endif
 
-#else # if VI not triggered, trigger forecast job from here
-#
-#  # submit the forecast job
-#  echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
-#  set runscript = ${HOME}/NGGPS/SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-#  set runmode = 'realtime'
-#  ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
+else # if VI not triggered, trigger forecast job from here
+
+  if ( "${run_fcst}" == 'YES' ) then
+    # submit the forecast job
+    echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
+    set runscript = ${HOME}/NGGPS/SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+    set runmode = 'realtime'
+    ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
+  endif
 
 endif
