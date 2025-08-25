@@ -45,10 +45,10 @@ except getopt.GetoptError:
     print ('wrong args')
     sys.exit(2)
 
-# --- hardcoded paramters below
+# --- hardcoded parameters below
 filter_domain = 10. # vi input domain size in deg
 res = 1/17. # model res (6.5-km SHiELD)
-min_dist_dom = 0.5 #0.1 # min distance of the selected box corners from the nested domain edges
+min_dist_dom = 0.5 #0.1 # min distance of the selected box corners from the nested domain edges [0.5 leads to min_index_dom=8]
 grid_file = ic_base + '/GRID/grid_spec.tile' + ic_tile + '.nc' # grid file for SHiELD
 
 # --- Main program begins
