@@ -41,8 +41,6 @@ echo -e "-----------------------------------------------------------------------
 echo -e "vvvvvvvvvvvvvvvvvvvv STARTING vi_SHiELD.sh on $(hostname) at $(date)"
 echo -e "---------------------------------------------------------------------------------------------------------\n"
 
-PS4='+ [$(date +"%H:%M:%S")] vi_SHiELD.sh line ${LINENO}: '
-
 source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1 # KGao 07/02/2024 fix
 ulimit
 
@@ -56,6 +54,7 @@ ${setx}
 # -- paramters for development/testing
 #export CDATE=2022092000
 #export VITASKlist='13L_tile1 14L_tile5'
+run_fcst=${run_fcst:-'NO'} # MJM --- TODO   
 
 # -- paramters to be changed by the user
 #export version=2.5
@@ -106,16 +105,24 @@ for ic_tile in "${ICTILElist[@]}"; do
 
     # -- vi options
     export zind_str=29 # 28 - same as v1
+    ## ***FIX2***
+    #echo "WARNING: FIX2 settings used! Switch to FIX3 to restore previous/operational version."
+    #export deg_box1=10   #12 #10
+    #export deg_box2=10   #12 #10
+    #export res_box1=0.04 #0.05
+    #export res_box2=0.20
+    # ***FIX3***
+    echo "ALERT: FIX3 settings used! This is the current operational version."
     export deg_box1=10   #12 #10
     export deg_box2=10   #12 #10
     export res_box1=0.025 #0.04 #0.05
     export res_box2=0.20
-
+    #
     export nest_grids=0 # ndom=nestdoms+1
     export initopt=0
     export gfs_flag=0
-    export gesfhr=6 # basically useless; only useful in setting the value for item in split.f
-    export ibgs=2 # cold start
+    export gesfhr=6     # basically useless; only useful in setting the value for item in split.f
+    export ibgs=2       # cold start
     export iflag_cold=1 # cold start
 
     # -- data dir
@@ -450,15 +457,20 @@ for ic_tile in "${ICTILElist[@]}"; do
 
 done # End of ic_tile loop
 
-#===============================================================================
-# trigger forecast job regardless of whether VI is successful
-# uncomment the lines below to submit the forecast job
-
-echo 'VILOG: VI is done; Submitting forecast job'
-#runscript=${HOME}/NGGPS/SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-#runmode='realtime'
-#cd $(dirname ${runscript})
-#${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
+  #===============================================================================
+if [ "${run_fcst}" == 'YES' ]; then
+  exit     # TODO: Make sure this is set up correctly  
+  #===============================================================================
+  # trigger forecast job regardless of whether VI is successful
+  # uncomment the lines below to submit the forecast job
+  echo 'VILOG: VI is done; Submitting forecast job'
+  runscript=${HOME}/NGGPS/SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+  runmode='realtime'
+  cd $(dirname ${runscript})
+  ${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
+else
+  echo 'VILOG: VI is done; ***Not*** submitting forecast job'
+fi
 
 set +x
 echo -e "\n---------------------------------------------------------------------------------------------------------"
