@@ -30,6 +30,7 @@
 # UPDATES:
 #   [2025MAR17] Added documentation header; Added notify_error function
 #   [2025MAR21] Better handled missing tmpvit file
+#   [2025AUG22] Added use of $run_fcst
 # =================================================
 
 # Define an alias that sends all given arguments ($!:*) as the error message
@@ -49,6 +50,11 @@ if (! $?SLURM_JOB_QOS) then
 else
   setenv USRDEF_QOS $SLURM_JOB_QOS
 endif
+if (! $?run_fcst) then
+  setenv run_fcst 'YES'
+else
+  setenv run_fcst ${run_fcst}
+endif
 
 # === directory to be specified by the user
 
@@ -61,7 +67,8 @@ set GRID = 'C768r10n4_atl_new'
 set ic_base = /gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/${GRID}/
 
 # vi criteria (will be passed to python scripts that generated TC files)
-set min_wind = 30.
+#set min_wind = 30.
+if (! $?min_wind) set min_wind = 30.
 set max_lat = 35.
 
 # === specific dir and file name settings
@@ -90,6 +97,9 @@ mkdir -p $vital_dir_processed
 # === Step 1: prepare text files for VI
 # this step will generate the two text files used by VI
 
+echo "VILOG: min_wind=${min_wind}"
+echo "VILOG: max_lat=${max_lat}"
+
 set nonomatch vitfiles=(${vital_dir_processed}/${CDATE}/???/tcvitals.vi)
 if ( ! -e $vitfiles[1] ) then
 
@@ -100,8 +110,6 @@ if ( ! -e $vitfiles[1] ) then
     notify_error "Error in tcutil_multistorm_sort_gfdl.py for ${CDATE}"
   endif
 
-  #if ( -f tmpvit ) then
-  #if ( -e tmpvit ) then
   if ( ! -z tmpvit ) then
     more tmpvit
     grep -q -F "NHC" "tmpvit" && mv tmpvit ${obs_vital} || echo 'VILOG: TC not found'
@@ -143,7 +151,7 @@ if ( -e $vitfiles[1] ) then
 
   if ( ! -e $ic_dst_file[1] ) then
     echo "VILOG: Submitting ${CDATE}, ${STORMIDlist}"
-    sbatch --job-name=vi_dev_ic_${GRID}_${CDATE} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},STORMIDlist="${STORMIDlist}" --qos ${USRDEF_QOS} ${vi_script}
+    sbatch --job-name=vi_dev_ic_${GRID}_${CDATE} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},STORMIDlist="${STORMIDlist}",run_fcst=${run_fcst} --qos ${USRDEF_QOS} ${vi_script}
     if ( ${status} != 0 ) then
       notify_error "Error launching vi_dev_ic_${GRID}_${CDATE} batch job"
       exit 1
@@ -155,10 +163,12 @@ if ( -e $vitfiles[1] ) then
 
 else # if VI not triggered, trigger forecast job from here
 
-  # submit the forecast job
-  echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
-  set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-  set runmode = 'realtime'
-  ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
+  if ( "${run_fcst}" == 'YES' ) then
+    # submit the forecast job
+    echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
+    set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+    set runmode = 'realtime'
+    ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
+  endif
 
 endif
