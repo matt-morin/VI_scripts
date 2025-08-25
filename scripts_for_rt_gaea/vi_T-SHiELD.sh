@@ -10,18 +10,48 @@
 #SBATCH --partition=batch
 #SBATCH --cluster=c5
 
-PS4='+ [$(date +"%H:%M:%S")] vi_T-SHiELD.sh line ${LINENO}: '
+# =================================================
+# ${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/vi_T-SHiELD.sh
+#   --- Created by Kun Gao and maintained by Matt Morin (UCAR/GFDL)
+#   --- This script...
+#
+# USAGE:
+#   --- Launched by submit_vi_T-SHiELD.csh
+#
+# INPUT:
+#   ---
+#
+# OUTPUT:
+#   ---
+#
+# NOTES:
+#   ---
+#
+# TODO:
+#   ---
+#
+# UPDATES:
+#   [2025AUG22] Partial sync with vi_SHiELD.sh (e.g., added documentation header; added use of $run_fcst)
+# =================================================
+
+echo -e "---------------------------------------------------------------------------------------------------------"
+echo -e "vvvvvvvvvvvvvvvvvvvv STARTING vi_T-SHiELD.sh on $(hostname) at $(date)"
+echo -e "---------------------------------------------------------------------------------------------------------\n"
 
 source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1 # KGao 07/02/2024 fix
 ulimit
-#set -xe # do not allow the job to proceed if VI failed
-set -x
+
+setx=${setx:-'set -x'}
+PS4='+ [$(date +"%H:%M:%S")] vi_T-SHiELD.sh line ${LINENO}: '
+${setx}
+#set -e # Do not allow the job to proceed if VI failed
 
 #===============================================================================
 # setting up
 
 #export CDATE=2022092000
 #export STORMIDlist=07L
+run_fcst=${run_fcst:-'YES'}
 
 # -- paramters to be changed by the user
 #export version=2.5
@@ -385,12 +415,20 @@ do
 
 done # End of STORMID loop
 
-#===============================================================================
-# trigger forecast job regardless of whether VI is successful
-# uncomment the lines below to submit the forecast job
+if [ "${run_fcst}" == 'YES' ]; then
+  #===============================================================================
+  # trigger forecast job regardless of whether VI is successful
+  # uncomment the lines below to submit the forecast job
+  echo 'VILOG: VI is done; Submitting forecast job'
+  runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+  runmode='realtime'
+  cd $(dirname ${runscript})
+  ${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
+else
+  echo 'VILOG: VI is done; ***Not*** submitting forecast job'
+fi
 
-echo 'VILOG: VI is done; Submitting forecast job'
-runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-runmode='realtime'
-cd $(dirname ${runscript})
-${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
+set +x
+echo -e "\n---------------------------------------------------------------------------------------------------------"
+echo -e "^^^^^^^^^^^^^^^^^^^^ ENDING vi_T-SHiELD.sh on $(hostname) at $(date)"
+echo -e "---------------------------------------------------------------------------------------------------------"
