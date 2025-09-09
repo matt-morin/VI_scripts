@@ -12,6 +12,10 @@
 #
 # NOTES:
 #   --- cat ./vitals/syndat_tcvitals.2024 | awk '$1 ~ /^NHC/ {stormnum = substr($2, 1, 2) + 0; if (stormnum>=1 && stormnum<=49 && $13>=30) {print $4$5}}' | cut -c1-10 | sort -nu > YMDHlist.txt
+#   --- Rerunning VI ICs
+#       [In C1536 dir] rename vi viORIG {20250816.06Z,20240817.06Z,20240701.12Z,20241004.18Z,20241010.00Z,20241009.18Z,20240827.06Z,20241004.12Z}_IC/{gfs_data.tile?_vi_?.nc.diff,vi_ic_C1536_20????????.out,gfs_data.tile?_vi_?.nc,submit_vi_SHiELD.out}
+#       [In tc_vitals processed dir] foreach Dir ( 2025081606 2024081706 2024070112 2024100418 2024101000 2024100918 2024082706 2024100412 ); mv $Dir ${Dir}_ORIG; end
+#       [In tc_vitals observed_all dir] rename .txt .txt_ORIG tcvitals_{2025081606,2024081706,2024070112,2024100418,2024101000,2024100918,2024082706,2024100412}.txt
 #
 # TODO:
 #   ---
@@ -30,13 +34,13 @@ PS4='+ [$(date +"%H:%M:%S")] run_retro.sh line ${LINENO}: '
 ${setx}
 #set -e
 
-modelname='T-SHiELD' #SHiELD|T-SHiELD
-export run_fcst='NO' #YES|NO
-export min_wind=20   #TODO: For "VItest01"    
-VIlabel='VItest01'   #TODO: For "VItest01"    
-do_PART1='NO'        #YES|NO
-do_PART2='YES'
-do_PART3='YES'
+modelname='T-SHiELD'    #SHiELD|T-SHiELD
+export run_fcst='NO'  #YES|NO
+#export min_wind=20   #For "VItest01"
+#VIlabel='VItest01'   #For "VItest01"
+do_PART1='YES'        #YES|NO
+do_PART2='NO'
+do_PART3='NO'
 #
 rundir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea
 case ${modelname} in
