@@ -112,7 +112,7 @@ for ic_tile in "${ICTILElist[@]}"; do
     #export res_box1=0.04 #0.05
     #export res_box2=0.20
     # ***FIX3***
-    echo "ALERT: FIX3 settings used! This is the current operational version."
+    #echo "ALERT: FIX3 settings used! This is the current operational version."
     export deg_box1=10   #12 #10
     export deg_box2=10   #12 #10
     export res_box1=0.025 #0.04 #0.05
@@ -446,7 +446,7 @@ for ic_tile in "${ICTILElist[@]}"; do
         echo "VILOG ${STORMID}_tile${ic_tile}: VI went successfully"
         ncatted -h -O -a vi_history,global,a,c," ${STORMID}" ${work_dir_ic}/gfs_data_vi.nc
         cp ${work_dir_ic}/gfs_data_vi.nc ${ic_file_dst}
-        rm -rf ${work_dir}
+        #rm -rf ${work_dir} #TODO: Do not remove this, for now
      else
         echo "VILOG ${STORMID}_tile${ic_tile}: ERROR: VI did not work"
      fi
@@ -457,7 +457,6 @@ for ic_tile in "${ICTILElist[@]}"; do
 
 done # End of ic_tile loop
 
-  #===============================================================================
 if [ "${run_fcst}" == 'YES' ]; then
   exit     # TODO: Make sure this is set up correctly  
   #===============================================================================
