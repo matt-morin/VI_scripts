@@ -35,6 +35,7 @@
 #   [2025JUN11] Finished development looping over $VITASKlist; Adjusted deg_box1, deg_box2, and res_box1 to resolve the 30 persistent crashes occurring in anl_combine ["FIX1"]; Reverted deg_box1 and deg_box2 back to 10 ["FIX2"]
 #   [2025JUN13] Tested an even smaller res_box1 of 0.025 (from 0.04) ["FIX3"]
 #   [2025JUN16] Added use of new crfactor variable (but kept it at its original value)
+#   [2025SEP09] Added "SHiELD" to work_base_dir; Cosmetic mods.
 # =================================================
 
 echo -e "---------------------------------------------------------------------------------------------------------"
@@ -54,9 +55,9 @@ ${setx}
 # -- paramters for development/testing
 #export CDATE=2022092000
 #export VITASKlist='13L_tile1 14L_tile5'
-run_fcst=${run_fcst:-'NO'} # MJM --- TODO   
-
+#
 # -- paramters to be changed by the user
+run_fcst=${run_fcst:-'NO'} #MJM TODO
 #export version=2.5
 export exec='exec' #_${version}
 crfactor=2.5       # Controls RDST1 in hafs_vi_split.x [orig.=2.5; can gradually incr. up to 5]
@@ -83,7 +84,7 @@ for ic_tile in "${ICTILElist[@]}"; do
     ((stormnum = stormnum + 1))
     export version=${stormnum}
 
-    #[MJM:2025MAY29]
+    #MJM
     BASINID=${STORMID:2:1}
     case ${BASINID} in
       L) BASIN='AL';;
@@ -101,7 +102,7 @@ for ic_tile in "${ICTILElist[@]}"; do
     export HOMEhafs=${HOME}/NGGPS/VI/HAFS_tools/ # consistent with HAFS naming
     export ic_base_dir=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/global.v202311/C1536/
     export vital_base_dir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/tc_vitals/SHiELD/processed/
-    export work_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/
+    export work_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/SHiELD/
 
     # -- vi options
     export zind_str=29 # 28 - same as v1
@@ -458,7 +459,7 @@ for ic_tile in "${ICTILElist[@]}"; do
 done # End of ic_tile loop
 
 if [ "${run_fcst}" == 'YES' ]; then
-  exit     # TODO: Make sure this is set up correctly  
+  exit     # TODO: Make sure this is set up correctly
   #===============================================================================
   # trigger forecast job regardless of whether VI is successful
   # uncomment the lines below to submit the forecast job
@@ -472,6 +473,6 @@ else
 fi
 
 set +x
-echo -e "\n---------------------------------------------------------------------------------------------------------"
-echo -e "^^^^^^^^^^^^^^^^^^^^ ENDING vi_SHiELD.sh on $(hostname) at $(date)"
-echo -e "---------------------------------------------------------------------------------------------------------"
+echo "---------------------------------------------------------------------------------------------------------"
+echo "^^^^^^^^^^^^^^^^^^^^ ENDING vi_SHiELD.sh on $(hostname) at $(date)"
+echo "---------------------------------------------------------------------------------------------------------"
