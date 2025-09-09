@@ -406,7 +406,7 @@ do
       echo "VILOG ${STORMID}: VI went successfully"
       ncatted -h -O -a vi_history,global,a,c," ${STORMID}" ${work_dir_ic}/gfs_data_vi.nc
       cp ${work_dir_ic}/gfs_data_vi.nc ${ic_file_dst}
-      rm -rf ${work_dir}
+      #rm -rf ${work_dir} #TODO: Do not remove this, for now
    else
       echo "VILOG ${STORMID}: ERROR: VI did not work"
    fi
