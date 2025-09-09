@@ -5,8 +5,6 @@ from netCDF4 import Dataset
 import glob
 import os
 
-#ic_tile = 0 #MJM/TESTING
-
 def read_nc(file, var_name):
     f1 = Dataset(file, 'r')
     var  = f1.variables[var_name][:]

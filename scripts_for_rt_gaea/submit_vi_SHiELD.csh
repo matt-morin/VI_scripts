@@ -35,6 +35,7 @@
 #   [2025JUN04] Moved active tmpvit to $tempdir; Looping tcutil_multistorm_sort_gfdl.py within $BASINID_list; Increased max_lat from 35 to 40; Cosmetic mods.
 #   [2025JUN09] Finished development looping over $ic_tile_list
 #   [2025AUG22] Added use of $run_fcst
+#   [2025SEP09] Cosmetic mods.
 # =================================================
 
 # Define an alias that sends all given arguments ($!:*) as the error message
@@ -55,7 +56,7 @@ else
   setenv USRDEF_QOS $SLURM_JOB_QOS
 endif
 if (! $?run_fcst) then
-  setenv run_fcst 'NO' # MJM --- TODO   
+  setenv run_fcst 'NO' # MJM --- TODO
 else
   setenv run_fcst ${run_fcst}
 endif
@@ -79,7 +80,7 @@ set ic_tile_list = '1 5' # MJM --- Tiles 1 and 5 have been tested with this syst
 # vi criteria (will be passed to python scripts that generated TC files)
 #set min_wind = 30.
 if (! $?min_wind) set min_wind = 30.
-set max_lat = 40. #35. # MJM TODO --- Is this number OK for all TC basins?
+set max_lat = 40. # MJM TODO --- Is this number OK for all TC basins (was 35)?
 
 # === specific dir and file name settings
 
@@ -116,7 +117,7 @@ if ( ! -e $vitfiles[1] ) then
 
   rm -f ${tmpvit} # MJM safety measure
   foreach BASINID ( ${BASINID_list} ) # MJM
-    ${vi_tool_dir}/ush/tcutil_multistorm_sort_gfdl.py ${CDATE} ${BASINID} $min_wind $max_lat >> ${tmpvit}
+    ${vi_tool_dir}/ush/tcutil_multistorm_sort_gfdl.py ${CDATE} ${BASINID} $min_wind $max_lat >> ${tmpvit} # Selected TCs
     if ( ${status} != 0 ) then # MJM
       notify_error "Error in tcutil_multistorm_sort_gfdl.py for ${CDATE} ${BASINID}"
     endif
@@ -140,9 +141,8 @@ if ( ! -e $vitfiles[1] ) then
   # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'
   # -t: ic_tile       -> tile number for ic, e.g., 1
 
-  # MJM TODO --- Start ic_tile_list loop here (you may have to add "/tile${ic_tile}/" to ${vital_dir_processed})
   foreach ic_tile ( ${ic_tile_list}  ) # MJM
-    set ic_src_file = ${ic_dir}/gfs_data.tile${ic_tile}.nc # IC without VI
+    set ic_src_file = ${ic_dir}/gfs_data.tile${ic_tile}.nc                # IC without VI
     set nonomatch ic_dst_file=(${ic_dir}/gfs_data.tile${ic_tile}_vi_?.nc) # IC after VI
     if ( -f ${obs_vital} && -f ${ic_src_file} ) then
       # note the wind and lat criteria are duplicated in script below
@@ -175,7 +175,7 @@ if ( -e $vitfiles[1] ) then
       exit 1
     endif
   else
-    notify_error "Error: JOB_NAME not launched because $ic_dst_file[1] is already available"
+    notify_error "Error: ${JOB_NAME} not launched because $ic_dst_file[1] is already available"
     continue
   endif
 

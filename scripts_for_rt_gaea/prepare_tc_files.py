@@ -42,7 +42,7 @@ except getopt.GetoptError:
     print ('wrong args')
     sys.exit(2)
 
-# --- hardcoded paramters below
+# --- hardcoded parameters below
 filter_domain = 10. # vi input domain size in deg
 res = 1/33. # model res
 min_dist_dom = 0.5 #0.1 # min distance of the selected box corners from the nested domain edges
