@@ -34,6 +34,7 @@ export setx=${setx:-'set +x'}
 PS4='+ [$(date +"%H:%M:%S")] run_retro.sh line ${LINENO}: '
 ${setx}
 
+# ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
 modelname='T-SHiELD'  #SHiELD|T-SHiELD
 export run_fcst='NO'  #YES|NO
 #export min_wind=20   #For "VItest01"
@@ -41,20 +42,22 @@ export run_fcst='NO'  #YES|NO
 do_PART1='YES'        #YES|NO (Running submit_vi_${modelname}.csh)
 do_PART2='NO'         #YES|NO (Archiving/moving the tc_vitals data (for abnormal VI tests))
 do_PART3='NO'         #YES|NO (Rename the "vi" output using ${VIlabel})
-#
+# ++++++++++++++  END  OF MAIN USER SETTINGS +++++++++++++++ #
+
+# ++++++++++++++ START OF OTHER USER SETTINGS ++++++++++++++ #
 rundir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea
 case ${modelname} in
-  SHiELD) tcvitDir=tc_vitals/SHiELD
-          ICDirbase=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/global.v202311/C1536
+  SHiELD) ICDirbase=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/global.v202311/C1536
           ICfile=gfs_data.tile6.nc;;
-  T-SHiELD) tcvitDir=tc_vitals
-            ICDirbase=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n4_atl_new
+  T-SHiELD) ICDirbase=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n4_atl_new
             ICfile=gfs_data.tile7.nc;;
 esac
+tcvitDir=tc_vitals/${modelname}
 datefile=${rundir}/YMDHlist.txt
 ICsNeeded=${rundir}/ICsNeeded.log
 njob_max=200
 njobs=$(squeue -h -u ${USER} -o '%10i %90j %12r' -t RUNNING,PENDING | grep -v 'JobHeldUser' | grep -c 'vi_ic_')
+# ++++++++++++++  END  OF OTHER USER SETTINGS ++++++++++++++ #
 
 cd ${rundir} || exit 1
 
