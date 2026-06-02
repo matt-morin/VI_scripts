@@ -33,7 +33,12 @@
 #   [2025MAR21] Better handled missing tmpvit file
 #   [2025AUG22] Added use of $run_fcst
 #   [2025SEP09] Added "T-SHiELD" to tc_vitals directory; Partial sync with submit_vi_SHiELD.csh (e.g., added $tmpdir, $BASINID_list, $ic_tile_list)
+#   [2026MAY19] Cosmetic and STDO mods. (synced with SHiELD); Switched an "exit 1" to "continue" (to match SHiELD version)
 # =================================================
+
+echo "-----------------------------------------------------------------------------------------------------------"
+echo "--- STARTING submit_vi_T-SHiELD.csh on `hostname` at `date`"
+echo "-----------------------------------------------------------------------------------------------------------"
 
 # Define an alias that sends all given arguments ($!:*) as the error message
 alias notify_error 'echo "\!:*" | mail -s "Error in submit_vi_T-SHiELD.csh" matthew.morin@noaa.gov'
@@ -174,7 +179,8 @@ if ( -e $vitfiles[1] ) then
     endif
   else
     notify_error "Error: ${JOB_NAME} not launched because $ic_dst_file[1] is already available"
-    exit 1
+    #exit 1
+    continue
   endif
 
 else # if VI not triggered, trigger forecast job from here
@@ -188,3 +194,8 @@ else # if VI not triggered, trigger forecast job from here
   endif
 
 endif
+
+unset echo verbose
+echo "-----------------------------------------------------------------------------------------------------------"
+echo "--- ENDING submit_vi_T-SHiELD.csh on `hostname at `date`"
+echo "-----------------------------------------------------------------------------------------------------------"
