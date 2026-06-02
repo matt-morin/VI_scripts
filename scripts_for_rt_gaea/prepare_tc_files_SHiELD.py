@@ -155,7 +155,6 @@ if True:
       # write out txt files
       do_write_out = True
       if do_write_out:
-        #out_dir = vital_dir_out + date + '/' + stormID + '/'
         out_dir = vital_dir_out + date + '/' + stormID + '_tile' + ic_tile + '/' # MJM
         out_file1 = out_dir + 'tcvitals.vi'
         out_file2 = out_dir + stormID + '.' + date + '.trak.atcfunix.all'
