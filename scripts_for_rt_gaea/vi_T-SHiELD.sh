@@ -33,6 +33,7 @@
 # UPDATES:
 #   [2025AUG22] Partial sync with vi_SHiELD.sh (e.g., added documentation header; added use of $run_fcst)
 #   [2025SEP09] Reduced wall clock; Partial sync with vi_SHiELD.sh [e.g., added "T-SHiELD" to work_base_dir, added crfactor (set to orig. value), ICTILElist]
+#   [2026MAY19] Cosmetic mods. (synced to SHiELD)
 # =================================================
 
 echo -e "---------------------------------------------------------------------------------------------------------"
@@ -111,7 +112,6 @@ for ic_tile in "${ICTILElist[@]}"; do
     export res_box2=0.20
     #
     export nest_grids=0 # ndom=nestdoms+1
-    #export BASIN=AL
     export initopt=0
     export gfs_flag=0
     export gesfhr=6     # basically useless; only useful in setting the value for item in split.f
@@ -119,7 +119,7 @@ for ic_tile in "${ICTILElist[@]}"; do
     export iflag_cold=1 # cold start
 
     # -- data dir
-    export grid_dir=${ic_base_dir}/GRID/ # !!!
+    export grid_dir=${ic_base_dir}/GRID/
     export ic_dir_src=${ic_base_dir}/${CDATE:0:8}.${CDATE:8:2}Z_IC/
     export ic_dir_dst=${ic_dir_src}
     if [ ${stormnum} -gt 1 ]; then
@@ -127,9 +127,9 @@ for ic_tile in "${ICTILElist[@]}"; do
     else
       export ic_file_ori=${ic_dir_src}/gfs_data.tile${ic_tile}.nc
     fi
-    export ic_file_dst=${ic_dir_dst}/gfs_data.tile${ic_tile}_vi_${version}.nc # !!!
+    export ic_file_dst=${ic_dir_dst}/gfs_data.tile${ic_tile}_vi_${version}.nc
     if [ ${stormnum} -gt 9 ]; then
-      echo "VILOG ${STORMID}_tile${ic_tile}: WARNING: stormnum(${stormnum})>9! Need to account for gfs_data.tile${ic_tile}_vi_${version}.nc in the forecast script!!!"
+      echo "VILOG ${STORMID}_tile${ic_tile}: WARNING: stormnum(${stormnum})>9! Need to account for gfs_data.tile${ic_tile}_vi_${version}.nc in the forecast script!"
       exit 1
     fi
 
@@ -142,6 +142,8 @@ for ic_tile in "${ICTILElist[@]}"; do
     # -- code dir
     export USHhafs=${HOMEhafs}/ush
     export EXEChafs=${HOMEhafs}/sorc/hafs_tools.fd/${exec}/
+    #export EXEChafs=/autofs/ncrc-svm1_home1/Kun.Gao/VI/HAFS_tools/sorc/hafs_tools.fd/exec_fix_new/ # MJM/KG testing 2025SEP10
+    #echo "WARNING: Using VI tools in EXEChafs=${EXEChafs}"
     export FIXhafs=${HOMEhafs}/fix
 
     export APRUNC="srun --ntasks=8 --export=ALL"
@@ -173,15 +175,15 @@ for ic_tile in "${ICTILElist[@]}"; do
     # prepare data
 
     # tc files
-    cp $vital_base_dir/$CDATE/${STORMID}/tcvitals.vi                 $work_dir_vital/
-    cp $vital_base_dir/$CDATE/${STORMID}/${STORMID}*atcfunix.all     $work_dir_vital/
+    cp $vital_base_dir/$CDATE/${STORMID}/tcvitals.vi              $work_dir_vital/
+    cp $vital_base_dir/$CDATE/${STORMID}/${STORMID}*atcfunix.all  $work_dir_vital/
 
     # prepare ic files
-    ln -sf ${grid_dir}/grid_spec.nest02.tile${ic_tile}.nc     ${work_dir_ic}/grid_spec.nc
-    ln -sf ${ic_dir_src}/gfs_ctrl.nc                 ${work_dir_ic}/gfs_ctrl.nc
-    ln -sf ${ic_dir_src}/sfc_data.tile${ic_tile}.nc           ${work_dir_ic}/sfc_data.nc
-    #ln -sf ${ic_dir_src}/gfs_data.tile${ic_tile}.nc           ${work_dir_ic}/gfs_data.nc
-    ln -sf ${ic_file_ori}                            ${work_dir_ic}/gfs_data.nc
+    ln -sf ${grid_dir}/grid_spec.nest02.tile${ic_tile}.nc ${work_dir_ic}/grid_spec.nc
+    ln -sf ${ic_dir_src}/gfs_ctrl.nc                      ${work_dir_ic}/gfs_ctrl.nc
+    ln -sf ${ic_dir_src}/sfc_data.tile${ic_tile}.nc       ${work_dir_ic}/sfc_data.nc
+    #ln -sf ${ic_dir_src}/gfs_data.tile${ic_tile}.nc      ${work_dir_ic}/gfs_data.nc
+    ln -sf ${ic_file_ori}                                 ${work_dir_ic}/gfs_data.nc
 
     tcvital=${work_dir_vital}/tcvitals.vi
     vmax_vit=`cat ${tcvital} | cut -c68-69`
