@@ -1,0 +1,13 @@
+
+!!! The current version of the VI IC data set uses the "FIX3" settings !!!
+!!!   -- All these output files have been renamed to "vi_FIX3"         !!!
+!!!   -- You'll need to change them back to "vi" when needed           !!!
+
+!!! Rename SHiELD_ORIG to SHiELD in tc_vitals !!!
+
+----------- OUTDATED INFO BELOW -----------
+
+!!! Currently testing min_dist_dom = 0.75 (from 0.5) in prepare_tc_files_SHiELD.py !!!
+  --- This is labeled "FIX4" in https://docs.google.com/spreadsheets/d/1VuJeRVDu8EEwXVYdVmu4Xs3RstcN7zUYhsYctsZWoaU/edit?gid=0#gid=0
+
+
