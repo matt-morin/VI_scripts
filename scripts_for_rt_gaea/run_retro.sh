@@ -8,7 +8,7 @@
 #   ---
 #
 # INPUT:
-#   ---
+#   --- YMDHlist.txt
 #
 # NOTES:
 #   --- cat ./vitals/syndat_tcvitals.2024 | awk '$1 ~ /^NHC/ {stormnum = substr($2, 1, 2) + 0; if (stormnum>=1 && stormnum<=49 && $13>=30) {print $4$5}}' | cut -c1-10 | sort -nu > YMDHlist.txt
@@ -18,29 +18,29 @@
 #       [In tc_vitals observed_all dir] rename .txt .txt_ORIG tcvitals_{2025081606,2024081706,2024070112,2024100418,2024101000,2024100918,2024082706,2024100412}.txt
 #
 # TODO:
-#   ---
+#   --- Rethink the order of the "do_PART" sections so I can easily do rerun tests
 #
 # UPDATES:
 #   [2025JUN10] Adapted from ~/NGGPS/SHiELD_rt2024/SHiELD_run/GAEA/
 #   [2025AUG22] Added functionality for running VI tests safely
+#   [2026MAY19] Cosmetic mods.; Added notes
 # =================================================
 
-echo -e "\n---------------------------------------------------------------------------------------------------------"
-echo -e "vvvvvvvvvvvvvvvvvvvv STARTING run_retro.sh on $(hostname) at $(date) vvvvvvvvvvvvvvvvvvvv"
-echo -e "---------------------------------------------------------------------------------------------------------\n"
+echo "---------------------------------------------------------------------------------------------------------"
+echo "--- STARTING run_retro.sh on $(hostname) at $(date)"
+echo "---------------------------------------------------------------------------------------------------------"
 
 export setx=${setx:-'set +x'}
 PS4='+ [$(date +"%H:%M:%S")] run_retro.sh line ${LINENO}: '
 ${setx}
-#set -e
 
-modelname='T-SHiELD'    #SHiELD|T-SHiELD
+modelname='T-SHiELD'  #SHiELD|T-SHiELD
 export run_fcst='NO'  #YES|NO
 #export min_wind=20   #For "VItest01"
-#VIlabel='VItest01'   #For "VItest01"
-do_PART1='YES'        #YES|NO
-do_PART2='NO'
-do_PART3='NO'
+#VIlabel='RERUN'      #VItest01|RERUN
+do_PART1='YES'        #YES|NO (Running submit_vi_${modelname}.csh)
+do_PART2='NO'         #YES|NO (Archiving/moving the tc_vitals data (for abnormal VI tests))
+do_PART3='NO'         #YES|NO (Rename the "vi" output using ${VIlabel})
 #
 rundir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea
 case ${modelname} in
@@ -94,9 +94,9 @@ do
     # PART2: Archiving/moving the tc_vitals data (for abnormal VI tests)
     cd ${rundir}
     echo "mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${VIlabel}.txt"
-    mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${VIlabel}.txt
+    #mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${VIlabel}.txt
     echo "mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${VIlabel}"
-    mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${VIlabel}
+    #mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${VIlabel}
   fi
 
   if [ ${do_PART3} == 'YES' ]; then
@@ -114,6 +114,6 @@ do
 done # End of DATE loop
 
 set +x
-echo -e "\n---------------------------------------------------------------------------------------------------------"
-echo "^^^^^^^^^^^^^^^^^^^^ ENDING run_retro.sh on $(hostname) at $(date) ^^^^^^^^^^^^^^^^^^^^^^"
+echo "---------------------------------------------------------------------------------------------------------"
+echo "--- ENDING run_retro.sh on $(hostname) at $(date)"
 echo "---------------------------------------------------------------------------------------------------------"
