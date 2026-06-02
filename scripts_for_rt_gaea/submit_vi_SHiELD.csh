@@ -26,7 +26,7 @@
 #   ---
 #
 # TODO:
-#   ---
+#   --- max_lat=40 --- Is this number OK for all TC basins (was 35)?
 #
 # UPDATES:
 #   [2025MAR17] Added documentation header; Added notify_error function
@@ -36,7 +36,12 @@
 #   [2025JUN09] Finished development looping over $ic_tile_list
 #   [2025AUG22] Added use of $run_fcst
 #   [2025SEP09] Cosmetic mods.
+#   [2026MAY19] Cosmetic and STDO mods. (synced with T-SHiELD)
 # =================================================
+
+echo "-----------------------------------------------------------------------------------------------------------"
+echo "--- STARTING submit_vi_SHiELD.csh on `hostname` at `date`"
+echo "-----------------------------------------------------------------------------------------------------------"
 
 # Define an alias that sends all given arguments ($!:*) as the error message
 alias notify_error 'echo "\!:*" | mail -s "Error in submit_vi_SHiELD.csh" matthew.morin@noaa.gov'
@@ -190,3 +195,8 @@ else # if VI not triggered, trigger forecast job from here
   endif
 
 endif
+
+unset echo verbose
+echo "-----------------------------------------------------------------------------------------------------------"
+echo "--- ENDING submit_vi_SHiELD.csh on `hostname at `date`"
+echo "-----------------------------------------------------------------------------------------------------------"
