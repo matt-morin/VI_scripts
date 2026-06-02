@@ -36,6 +36,7 @@
 #   [2025JUN13] Tested an even smaller res_box1 of 0.025 (from 0.04) ["FIX3"]
 #   [2025JUN16] Added use of new crfactor variable (but kept it at its original value)
 #   [2025SEP09] Added "SHiELD" to work_base_dir; Cosmetic mods.
+#   [2026MAY19] Cosmetic mods. (synced to T-SHiELD)
 # =================================================
 
 echo -e "---------------------------------------------------------------------------------------------------------"
@@ -127,7 +128,7 @@ for ic_tile in "${ICTILElist[@]}"; do
     export iflag_cold=1 # cold start
 
     # -- data dir
-    export grid_dir=${ic_base_dir}/GRID/ # !!!
+    export grid_dir=${ic_base_dir}/GRID/
     export ic_dir_src=${ic_base_dir}/${CDATE:0:8}.${CDATE:8:2}Z_IC/
     export ic_dir_dst=${ic_dir_src}
     if [ ${stormnum} -gt 1 ]; then
@@ -135,9 +136,9 @@ for ic_tile in "${ICTILElist[@]}"; do
     else
       export ic_file_ori=${ic_dir_src}/gfs_data.tile${ic_tile}.nc
     fi
-    export ic_file_dst=${ic_dir_dst}/gfs_data.tile${ic_tile}_vi_${version}.nc # !!!
+    export ic_file_dst=${ic_dir_dst}/gfs_data.tile${ic_tile}_vi_${version}.nc
     if [ ${stormnum} -gt 9 ]; then
-      echo "VILOG ${STORMID}_tile${ic_tile}: WARNING: stormnum(${stormnum})>9! Need to account for gfs_data.tile${ic_tile}_vi_${version}.nc in the forecast script!!!"
+      echo "VILOG ${STORMID}_tile${ic_tile}: WARNING: stormnum(${stormnum})>9! Need to account for gfs_data.tile${ic_tile}_vi_${version}.nc in the forecast script!"
       exit 1
     fi
 
@@ -181,15 +182,15 @@ for ic_tile in "${ICTILElist[@]}"; do
     # prepare data
 
     # tc files
-    cp $vital_base_dir/$CDATE/${STORMID}_tile${ic_tile}/tcvitals.vi                 $work_dir_vital/
-    cp $vital_base_dir/$CDATE/${STORMID}_tile${ic_tile}/${STORMID}*atcfunix.all     $work_dir_vital/
+    cp $vital_base_dir/$CDATE/${STORMID}_tile${ic_tile}/tcvitals.vi              $work_dir_vital/
+    cp $vital_base_dir/$CDATE/${STORMID}_tile${ic_tile}/${STORMID}*atcfunix.all  $work_dir_vital/
 
     # prepare ic files
-    ln -sf ${grid_dir}/grid_spec.tile${ic_tile}.nc            ${work_dir_ic}/grid_spec.nc
-    ln -sf ${ic_dir_src}/gfs_ctrl.nc                 ${work_dir_ic}/gfs_ctrl.nc
-    ln -sf ${ic_dir_src}/sfc_data.tile${ic_tile}.nc           ${work_dir_ic}/sfc_data.nc
-    #ln -sf ${ic_dir_src}/gfs_data.tile${ic_tile}.nc           ${work_dir_ic}/gfs_data.nc
-    ln -sf ${ic_file_ori}                            ${work_dir_ic}/gfs_data.nc
+    ln -sf ${grid_dir}/grid_spec.tile${ic_tile}.nc        ${work_dir_ic}/grid_spec.nc
+    ln -sf ${ic_dir_src}/gfs_ctrl.nc                      ${work_dir_ic}/gfs_ctrl.nc
+    ln -sf ${ic_dir_src}/sfc_data.tile${ic_tile}.nc       ${work_dir_ic}/sfc_data.nc
+    #ln -sf ${ic_dir_src}/gfs_data.tile${ic_tile}.nc      ${work_dir_ic}/gfs_data.nc
+    ln -sf ${ic_file_ori}                                 ${work_dir_ic}/gfs_data.nc
 
     tcvital=${work_dir_vital}/tcvitals.vi
     vmax_vit=`cat ${tcvital} | cut -c68-69`
