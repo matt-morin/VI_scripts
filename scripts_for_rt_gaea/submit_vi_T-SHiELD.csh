@@ -197,5 +197,5 @@ endif
 
 unset echo verbose
 echo "-----------------------------------------------------------------------------------------------------------"
-echo "--- ENDING submit_vi_T-SHiELD.csh on `hostname at `date`"
+echo "--- ENDING submit_vi_T-SHiELD.csh on `hostname` at `date`"
 echo "-----------------------------------------------------------------------------------------------------------"
