@@ -1,6 +1,6 @@
 #!/bin/tcsh
 # =================================================
-# ${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/submit_vi_T-SHiELD.csh
+# ${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/submit_vi_T-SHiELD_new.csh
 #   --- Created by Kun Gao and maintained by Matt Morin (UCAR/GFDL)
 #   --- This script drives the VI-related workflow for the RT T-SHiELD
 #       It is triggerd by the IC creation script once ICs are generated
@@ -9,7 +9,7 @@
 #        - launch the VI script
 #
 # USAGE:
-#   --- ./submit_vi_T-SHiELD.csh ${YMDH}
+#   --- ./submit_vi_T-SHiELD_new.csh ${YMDH}
 #   --- Can be launched using ./run_retro.sh
 #
 # INPUT:
@@ -17,9 +17,9 @@
 #       ${ic_base}/gfs_data.tile7.nc
 #
 # OUTPUT:
-#   --- tc_vitals/T-SHiELD/observed_all/tcvitals_${YMDH}.txt
-#       tc_vitals/T-SHiELD/processed/${YMDH}/${STORMID}/tcvitals.vi
-#       tc_vitals/T-SHiELD/processed/${YMDH}/${STORMID}/${STORMID}.${YMDH}.trak.atcfunix.all
+#   --- tc_vitals/T-SHiELD_new/observed_all/tcvitals_${YMDH}.txt
+#       tc_vitals/T-SHiELD_new/processed/${YMDH}/${STORMID}/tcvitals.vi
+#       tc_vitals/T-SHiELD_new/processed/${YMDH}/${STORMID}/${STORMID}.${YMDH}.trak.atcfunix.all
 #       ${ic_base}/gfs_data.tile7_vi_?.nc
 #
 # NOTES:
@@ -34,14 +34,16 @@
 #   [2025AUG22] Added use of $run_fcst
 #   [2025SEP09] Added "T-SHiELD" to tc_vitals directory; Partial sync with submit_vi_SHiELD.csh (e.g., added $tmpdir, $BASINID_list, $ic_tile_list)
 #   [2026MAY19] Cosmetic and STDO mods. (synced with SHiELD); Switched an "exit 1" to "continue" (to match SHiELD version)
+#   [2026JUN02] Adapted from submit_vi_T-SHiELD.csh for the new 2026 2.6-km T-SHiELD; Cosmetic mods.
+#   [2026JUN05] Finished development; Removed trailing forward slash from path definitions
 # =================================================
 
 echo "-----------------------------------------------------------------------------------------------------------"
-echo "--- STARTING submit_vi_T-SHiELD.csh on `hostname` at `date`"
+echo "--- STARTING submit_vi_T-SHiELD_new.csh on `hostname` at `date`"
 echo "-----------------------------------------------------------------------------------------------------------"
 
 # Define an alias that sends all given arguments ($!:*) as the error message
-alias notify_error 'echo "\!:*" | mail -s "Error in submit_vi_T-SHiELD.csh" matthew.morin@noaa.gov'
+alias notify_error 'echo "\!:*" | mail -s "Error in submit_vi_T-SHiELD_new.csh" matthew.morin@noaa.gov'
 
 module load python/3.9
 
@@ -75,8 +77,8 @@ cd ${vi_base} || exit 1
 set BASINID_list = 'L' # MJM --- 'L E C W S P A B'
 
 # ic files
-set GRID = 'C768r10n4_atl_new'
-set ic_base = /gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/${GRID}/
+set GRID = 'C768r10n5_atl_large'
+set ic_base = /gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/${GRID}
 set ic_tile_list = '7' # MJM --- Tile 7 has been tested with this system
 
 # vi criteria (will be passed to python scripts that generated TC files)
@@ -87,21 +89,21 @@ set max_lat = 35.
 # === specific dir and file name settings
 
 # scripts
-set vi_tool_dir = ${vi_base}/HAFS_tools/
-set vi_driver_dir = ${vi_base}/VI_scripts/scripts_for_rt_gaea/
-set vi_script = ${vi_driver_dir}/vi_T-SHiELD.sh
+set vi_tool_dir = ${vi_base}/HAFS_tools
+set vi_driver_dir = ${vi_base}/VI_scripts/scripts_for_rt_gaea
+set vi_script = ${vi_driver_dir}/vi_T-SHiELD_new.sh
 
 # tc files
-set vital_base = ${vi_driver_dir}/tc_vitals/T-SHiELD
+set vital_base = ${vi_driver_dir}/tc_vitals/T-SHiELD_new
 set vital_dir_obs = ${vital_base}/observed_all
-set vital_dir_processed = ${vital_base}/processed/
+set vital_dir_processed = ${vital_base}/processed
 set obs_vital = ${vital_dir_obs}/tcvitals_${CDATE}.txt # this is the obs vital at given time
 set tmpvit = ${tempdir}/tmpvit
 
 # ics
 set DATE = `echo ${CDATE} | cut -c1-8`
 set hh = `echo ${CDATE} | cut -c9-10`
-set ic_dir = ${ic_base}/${DATE}.${hh}Z_IC/
+set ic_dir = ${ic_base}/${DATE}.${hh}Z_IC
 
 mkdir -p $vital_dir_obs
 mkdir -p $vital_dir_processed
@@ -134,14 +136,14 @@ if ( ! -e $vitfiles[1] ) then
     echo 'VILOG: TC not found'
   endif
 
-  # --- if so, prepare the text files that can be used for VI (using prepare_tc_files_T-SHiELD.py)
+  # --- if so, prepare the text files that can be used for VI (using prepare_tc_files_T-SHiELD_new.py)
 
   # -d: date          -> current date as CDATE
   # -w: min_wind      -> min Vmax for VI
   # -l: max_lat       -> max initial lat for VI
-  # -i: ic_base       -> base dir for ic, e.g., '/lustre/f2/dev/gfdl/Kun.Gao/SHiELD_IC_v16/'+grid+'/'
+  # -i: ic_base       -> base dir for ic, e.g., '/lustre/f2/dev/gfdl/Kun.Gao/SHiELD_IC_v16/'+grid
   # -f: vital_file    -> obs vital messages as a txt file, e.g., vital_base+'observed_all/tcvitals_'+date+'.txt'
-  # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'
+  # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed'
   # -t: ic_tile       -> tile number for ic, e.g., 1
 
   foreach ic_tile ( ${ic_tile_list}  ) # MJM
@@ -149,13 +151,13 @@ if ( ! -e $vitfiles[1] ) then
     set nonomatch ic_dst_file=(${ic_dir}/gfs_data.tile${ic_tile}_vi_?.nc) # IC after VI
     if ( -f ${obs_vital} && -f ${ic_src_file} ) then
       # note the wind and lat criteria are duplicated in script below
-      echo "VILOG (tile${ic_tile}): prepare_tc_files_T-SHiELD.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed -t $ic_tile"
-      ${vi_driver_dir}/prepare_tc_files_T-SHiELD.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed -t $ic_tile
+      echo "VILOG (tile${ic_tile}): prepare_tc_files_T-SHiELD_new.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed -t $ic_tile"
+      ${vi_driver_dir}/prepare_tc_files_T-SHiELD_new.py -d ${CDATE} -w $min_wind -l $max_lat -i $ic_base -f $obs_vital -o $vital_dir_processed -t $ic_tile
       if ( ${status} != 0 ) then # MJM
-        notify_error "Error in prepare_tc_files_T-SHiELD.py for ${CDATE} tile${ic_tile}"
+        notify_error "Error in prepare_tc_files_T-SHiELD_new.py for ${CDATE} tile${ic_tile}"
       endif
     else
-      echo "VILOG (tile${ic_tile}): Not calling ${vi_driver_dir}/prepare_tc_files_T-SHiELD.py [obs_vital(${obs_vital}) and/or ic_src_file(${ic_src_file}) not available]"
+      echo "VILOG (tile${ic_tile}): Not calling ${vi_driver_dir}/prepare_tc_files_T-SHiELD_new.py [obs_vital(${obs_vital}) and/or ic_src_file(${ic_src_file}) not available]"
     endif
   end # MJM
 
@@ -188,7 +190,7 @@ else # if VI not triggered, trigger forecast job from here
   if ( "${run_fcst}" == 'YES' ) then
     # submit the forecast job
     echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
-    set runscript = ${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+    set runscript = ${HOME}/NGGPS/T-SHiELD_rt2026/SHiELD_run/GAEA/submit_forecast.sh
     set runmode = 'realtime'
     ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
   endif
@@ -197,5 +199,5 @@ endif
 
 unset echo verbose
 echo "-----------------------------------------------------------------------------------------------------------"
-echo "--- ENDING submit_vi_T-SHiELD.csh on `hostname` at `date`"
+echo "--- ENDING submit_vi_T-SHiELD_new.csh on `hostname` at `date`"
 echo "-----------------------------------------------------------------------------------------------------------"
