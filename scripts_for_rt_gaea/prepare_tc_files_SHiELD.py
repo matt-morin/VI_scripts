@@ -9,7 +9,6 @@ from vi_functions_SHiELD import *
 # This python script generates the TC text files needed by VI
 
 # INPUT needed
-
 # -d: date          -> current date as CDATE
 # -w: min_wind      -> min Vmax for VI
 # -l: max_lat       -> max initial lat for VI
@@ -17,6 +16,18 @@ from vi_functions_SHiELD import *
 # -f: vital_file    -> obs vital messages as a txt file, e.g., vital_base+'observed_all/tcvitals_'+date+'.txt'
 # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'+stormID+'/'
 # -t: ic_tile       -> tile number for ic, e.g., 1
+
+# GRID RESOLUTION RATIONALE: 1/17 DEGREE FOR SHiELD 6.5-km MODEL
+# 1. Physical Scale Matching:
+#    - Earth's equatorial circumference: ~40,075 km / 360° = 111.32 km/deg.
+#    - 111.32 km / 6.5 km (target spacing) = 17.12 cells per degree.
+#    - Rounding to 1/17° (~0.0588°) yields ~6.55 km spacing at the equator.
+# 2. Native Core Alignment (C1536 Cubed-Sphere):
+#    - SHiELD C1536 uses 6 cube faces, each with 1536 x 1536 cells.
+#    - Equatorial circumference spans 4 faces: 4 * 1536 = 6,144 native cells.
+#    - A 1/17° regular lat-lon grid yields: 360 * 17 = 6,120 points.
+#    - The 0.39% difference preserves information density perfectly without
+#      causing under- or over-sampling during regridding.
 
 # --- get the arguments from the command line
 argv = sys.argv[1:]
