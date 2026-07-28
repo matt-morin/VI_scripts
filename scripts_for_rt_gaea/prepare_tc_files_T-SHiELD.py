@@ -9,7 +9,6 @@ from vi_functions_TSHiELD import *
 # This python script generates the TC text files needed by VI
 
 # INPUT needed
-
 # -d: date          -> current date as CDATE
 # -w: min_wind      -> min Vmax for VI
 # -l: max_lat       -> max initial lat for VI
