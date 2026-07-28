@@ -1,15 +1,23 @@
 #! /usr/bin/env python3
+
+"""
+TODO:
+    - 2026-06-05: Try to create a unified version of this script that can handle the 3.25-km and 2.6-km T-SHiELD, as well as the 6.5-km SHiELD
+    - 2026-06-05: Cleanup/resolve "MJM" and "TODO" comments
+
+UPDATES:
+    - 2026-06-05: Adapted from prepare_tc_files_T-SHiELD.py for use with the 2.6-km T-SHiELD; Adjusted use of "/" in file and path definitions; Added documentation header
+"""
+
 import numpy as np
 import os
 import sys
 import getopt
-
-from vi_functions_TSHiELD import *
+from vi_functions_TSHiELD_new import *
 
 # This python script generates the TC text files needed by VI
 
 # INPUT needed
-
 # -d: date          -> current date as CDATE
 # -w: min_wind      -> min Vmax for VI
 # -l: max_lat       -> max initial lat for VI
@@ -47,9 +55,9 @@ except getopt.GetoptError:
 
 # --- hardcoded parameters below
 filter_domain = 10. # vi input domain size in deg
-res = 1/33. # model res (3.25-km nested T-SHiELD)
+res = 1/41. # model res (2.6-km nested T-SHiELD_new)
 min_dist_dom = 0.5 #0.1 # min distance of the selected box corners from the nested domain edges [0.5 leads to min_index_dom=16]
-grid_file = ic_base + '/GRID/grid_spec.nest02.tile' + ic_tile + '.nc' # grid file for T-SHiELD
+grid_file = ic_base + '/GRID/grid_spec.nest02.tile' + ic_tile + '.nc' # grid file for T-SHiELD_new
 
 # --- Main program begins
 
@@ -59,7 +67,7 @@ min_index_dom = int(min_dist_dom/res)
 
 grid_latt = read_nc(grid_file, 'grid_latt')
 grid_lont = read_nc(grid_file, 'grid_lont')
-ic_dir = ic_base + date[:-2]+'.'+date[-2:]+'Z_IC'
+ic_dir = ic_base + '/' + date[:-2]+'.'+date[-2:]+'Z_IC' # MJM
 
 if True:
   tc_dict = read_tcvitals(vital_file)
@@ -155,7 +163,7 @@ if True:
       # write out txt files
       do_write_out = True
       if do_write_out:
-        out_dir = vital_dir_out + date + '/' + stormID + '/'
+        out_dir = vital_dir_out + '/' + date + '/' + stormID + '/' # MJM
         #out_dir = vital_dir_out + date + '/' + stormID + '_tile' + ic_tile + '/' # MJM TODO
         out_file1 = out_dir + 'tcvitals.vi'
         out_file2 = out_dir + stormID + '.' + date + '.trak.atcfunix.all'
@@ -166,8 +174,8 @@ if True:
            if os.path.exists(out_file2):
               os.remove(out_file2)
            os.rmdir(out_dir)
-        if not os.path.exists(vital_dir_out + date):
-           os.mkdir(vital_dir_out + date)
+        if not os.path.exists(vital_dir_out + '/' + date): # MJM
+           os.mkdir(vital_dir_out + '/' + date) # MJM
         os.mkdir(out_dir)
 
         # generate obs tc vital file
