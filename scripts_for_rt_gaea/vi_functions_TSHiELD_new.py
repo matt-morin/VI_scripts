@@ -1,3 +1,11 @@
+"""
+TODO:
+    - 2026-06-05: Try to create a unified version of this script that can handle the 3.25-km and 2.6-km T-SHiELD, as well as the 6.5-km SHiELD
+
+UPDATES:
+    - 2026-06-05: Adapted from vi_functions_TSHiELD.py for use with the 2.6-km T-SHiELD; Added documentation header
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
@@ -29,7 +37,7 @@ def map_dvar_to_cgrid(dvar):
     return dvar_w, dvar_s
 
 def selected_data_wind(xm, ym, u, v, deg_sel):
-    scope = deg_sel*33 # MJM: "33" comes from the denominator of res (valid for 3.25-km nested T-SHiELD)
+    scope = deg_sel*41 # MJM: "41" comes from the denominator of res (valid for 2.6-km nested T-SHiELD_new)
     dist = (xm**2 + ym**2)**0.5
     detected_center =  np.where(dist == np.min(dist))
     ic, jc = detected_center[0][0], detected_center[1][0]
@@ -84,7 +92,7 @@ def find_center(var, lon, lat, tc_lon, tc_lat):
     ic, jc = center[0][0], center[1][0]
 
     box_half_width = 0.5 # deg
-    res = 1./33 # res in deg (MJM: Valid for 3.25-km nested T-SHiELD)
+    res = 1./41 # res in deg (MJM: Valid for 2.6-km nested T-SHiELD_new)
     scope = np.int(box_half_width/res)
 
     var_sel = var[ic-scope:ic+scope, jc-scope:jc+scope]
