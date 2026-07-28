@@ -24,6 +24,7 @@
 #   [2025JUN10] Adapted from ~/NGGPS/SHiELD_rt2024/SHiELD_run/GAEA/
 #   [2025AUG22] Added functionality for running VI tests safely
 #   [2026MAY19] Cosmetic mods.; Added notes
+#   [2026JUN05] Added T-SHiELD_new; Normal runtime mods.
 # =================================================
 
 echo "---------------------------------------------------------------------------------------------------------"
@@ -35,7 +36,7 @@ PS4='+ [$(date +"%H:%M:%S")] run_retro.sh line ${LINENO}: '
 ${setx}
 
 # ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
-modelname='T-SHiELD'  #SHiELD|T-SHiELD
+modelname='T-SHiELD_new'  #SHiELD|T-SHiELD
 export run_fcst='NO'  #YES|NO
 #export min_wind=20   #For "VItest01"
 #VIlabel='RERUN'      #VItest01|RERUN
@@ -50,6 +51,8 @@ case ${modelname} in
   SHiELD) ICDirbase=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/global.v202311/C1536
           ICfile=gfs_data.tile6.nc;;
   T-SHiELD) ICDirbase=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n4_atl_new
+            ICfile=gfs_data.tile7.nc;;
+  T-SHiELD_new) ICDirbase=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n5_atl_large
             ICfile=gfs_data.tile7.nc;;
 esac
 tcvitDir=tc_vitals/${modelname}
@@ -82,8 +85,9 @@ do
       echo "${YMDH}" >> ${ICsNeeded}
     else
       if [ -f ${stdout} ]; then
-        echo "ERROR: ${stdout} already exists! Exiting..."
-        exit 1
+        echo "NOTE: ${stdout} already exists! Moving on to next case..."
+        sed -i "s/${YMDH}/xxxXXX${YMDH}/g" ${datefile}
+        continue
       else
         echo "Running submit_vi_${modelname}.csh for ${YMDH}"
         ./submit_vi_${modelname}.csh ${YMDH} > ${stdout} 2>&1
