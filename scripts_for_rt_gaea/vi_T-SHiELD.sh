@@ -13,7 +13,6 @@
 # =================================================
 # ${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/vi_T-SHiELD.sh
 #   --- Created by Kun Gao and maintained by Matt Morin (UCAR/GFDL)
-#   --- This script...
 #
 # USAGE:
 #   --- Launched by submit_vi_T-SHiELD.csh
