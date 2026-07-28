@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --output=/autofs/ncrc-svm1_home2/Matthew.Morin/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/stdout/%x.out
-#SBATCH --job-name=tshield_vi
+#SBATCH --job-name=tshield_new_vi
 #SBATCH --account=gfdl_w
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
@@ -11,12 +11,11 @@
 #SBATCH --cluster=c5
 
 # =================================================
-# ${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/vi_T-SHiELD.sh
+# ${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/vi_T-SHiELD_new.sh
 #   --- Created by Kun Gao and maintained by Matt Morin (UCAR/GFDL)
-#   --- This script...
 #
 # USAGE:
-#   --- Launched by submit_vi_T-SHiELD.csh
+#   --- Launched by submit_vi_T-SHiELD_new.csh
 #
 # INPUT:
 #   ---
@@ -28,23 +27,25 @@
 #   ---
 #
 # TODO:
-#   ---
+#   --- Sync with vi_SHiELD.sh
 #
 # UPDATES:
 #   [2025AUG22] Partial sync with vi_SHiELD.sh (e.g., added documentation header; added use of $run_fcst)
 #   [2025SEP09] Reduced wall clock; Partial sync with vi_SHiELD.sh [e.g., added "T-SHiELD" to work_base_dir, added crfactor (set to orig. value), ICTILElist]
 #   [2026MAY19] Cosmetic mods. (synced to SHiELD)
+#   [2026JUN02] Adapted from vi_T-SHiELD.sh for the new 2026 2.6-km T-SHiELD
+#   [2026JUN05] Finished development; Removed trailing forward slash from path definitions
 # =================================================
 
 echo -e "---------------------------------------------------------------------------------------------------------"
-echo -e "vvvvvvvvvvvvvvvvvvvv STARTING vi_T-SHiELD.sh on $(hostname) at $(date)"
+echo -e "vvvvvvvvvvvvvvvvvvvv STARTING vi_T-SHiELD_new.sh on $(hostname) at $(date)"
 echo -e "---------------------------------------------------------------------------------------------------------\n"
 
 source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1 # KGao 07/02/2024 fix
 ulimit
 
 setx=${setx:-'set -x'}
-PS4='+ [$(date +"%H:%M:%S")] vi_T-SHiELD.sh line ${LINENO}: '
+PS4='+ [$(date +"%H:%M:%S")] vi_T-SHiELD_new.sh line ${LINENO}: '
 ${setx}
 #set -e # Do not allow the job to proceed if VI failed
 
@@ -69,7 +70,7 @@ ICTILElist='7'     #TODO: Sync with vi_SHiELD.sh
 #echo "ICTILElist: ${ICTILElist[*]}"
 
 ## Loop over tile numbers and extract corresponding storm IDs #TODO: Sync with vi_SHiELD.sh
-# Loop over tile numbers #TODO
+# Loop over tile numbers
 for ic_tile in "${ICTILElist[@]}"; do
   #STORMIDlist=($(for item in $VITASKlist; do
   #  if [[ $item == *_tile$ic_tile ]]; then
@@ -100,9 +101,9 @@ for ic_tile in "${ICTILElist[@]}"; do
     esac
 
     export HOMEhafs=${HOME}/NGGPS/VI/HAFS_tools/ # consistent with HAFS naming
-    export ic_base_dir=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n4_atl_new/
-    export vital_base_dir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/tc_vitals/T-SHiELD/processed/
-    export work_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/T-SHiELD/
+    export ic_base_dir=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n5_atl_large
+    export vital_base_dir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/tc_vitals/T-SHiELD_new/processed
+    export work_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/T-SHiELD_new
 
     # -- vi options
     export zind_str=29 # 28 - same as v1
@@ -119,8 +120,8 @@ for ic_tile in "${ICTILElist[@]}"; do
     export iflag_cold=1 # cold start
 
     # -- data dir
-    export grid_dir=${ic_base_dir}/GRID/
-    export ic_dir_src=${ic_base_dir}/${CDATE:0:8}.${CDATE:8:2}Z_IC/
+    export grid_dir=${ic_base_dir}/GRID
+    export ic_dir_src=${ic_base_dir}/${CDATE:0:8}.${CDATE:8:2}Z_IC
     export ic_dir_dst=${ic_dir_src}
     if [ ${stormnum} -gt 1 ]; then
       export ic_file_ori=${ic_dir_src}/gfs_data.tile${ic_tile}_vi_$((stormnum-1)).nc
@@ -135,13 +136,13 @@ for ic_tile in "${ICTILElist[@]}"; do
 
     # -- work dir
     export work_dir=${work_base_dir}/${CDATE}/${STORMID}
-    export work_dir_ic=${work_dir}/data/ic/
-    export work_dir_vital=${work_dir}/data/vital/
-    export work_dir_vi=${work_dir}/atm_vi/
+    export work_dir_ic=${work_dir}/data/ic
+    export work_dir_vital=${work_dir}/data/vital
+    export work_dir_vi=${work_dir}/atm_vi
 
     # -- code dir
     export USHhafs=${HOMEhafs}/ush
-    export EXEChafs=${HOMEhafs}/sorc/hafs_tools.fd/${exec}/
+    export EXEChafs=${HOMEhafs}/sorc/hafs_tools.fd/${exec}
     #export EXEChafs=/autofs/ncrc-svm1_home1/Kun.Gao/VI/HAFS_tools/sorc/hafs_tools.fd/exec_fix_new/ # MJM/KG testing 2025SEP10
     #echo "WARNING: Using VI tools in EXEChafs=${EXEChafs}"
     export FIXhafs=${HOMEhafs}/fix
@@ -175,8 +176,8 @@ for ic_tile in "${ICTILElist[@]}"; do
     # prepare data
 
     # tc files
-    cp $vital_base_dir/$CDATE/${STORMID}/tcvitals.vi              $work_dir_vital/
-    cp $vital_base_dir/$CDATE/${STORMID}/${STORMID}*atcfunix.all  $work_dir_vital/
+    cp $vital_base_dir/$CDATE/${STORMID}/tcvitals.vi              $work_dir_vital
+    cp $vital_base_dir/$CDATE/${STORMID}/${STORMID}*atcfunix.all  $work_dir_vital
 
     # prepare ic files
     ln -sf ${grid_dir}/grid_spec.nest02.tile${ic_tile}.nc ${work_dir_ic}/grid_spec.nc
@@ -233,9 +234,9 @@ for ic_tile in "${ICTILElist[@]}"; do
     #===============================================================================
     # VI steps
 
-    work_dir_split=${work_dir_vi}/split_init/
-    work_dir_pert=${work_dir_vi}/anl_pert_init/
-    work_dir_combine=${work_dir_vi}/anl_storm/
+    work_dir_split=${work_dir_vi}/split_init
+    work_dir_pert=${work_dir_vi}/anl_pert_init
+    work_dir_combine=${work_dir_vi}/anl_storm
 
     # --- 1. split step
 
@@ -457,7 +458,7 @@ if [ "${run_fcst}" == 'YES' ]; then
   # trigger forecast job regardless of whether VI is successful
   # uncomment the lines below to submit the forecast job
   echo 'VILOG: VI is done; Submitting forecast job'
-  runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+  runscript=${HOME}/NGGPS/T-SHiELD_rt2026/SHiELD_run/GAEA/submit_forecast.sh
   runmode='realtime'
   cd $(dirname ${runscript})
   ${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
@@ -467,5 +468,5 @@ fi
 
 set +x
 echo "---------------------------------------------------------------------------------------------------------"
-echo "^^^^^^^^^^^^^^^^^^^^ ENDING vi_T-SHiELD.sh on $(hostname) at $(date)"
+echo "^^^^^^^^^^^^^^^^^^^^ ENDING vi_T-SHiELD_new.sh on $(hostname) at $(date)"
 echo "---------------------------------------------------------------------------------------------------------"
