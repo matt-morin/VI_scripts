@@ -37,7 +37,7 @@
 # =================================================
 
 echo "-----------------------------------------------------------------------------------------------------------"
-echo "--- STARTING submit_vi_T-SHiELD.csh on `hostname` at `date`"
+echo "----- STARTING submit_vi_T-SHiELD.csh on `hostname` at `date`"
 echo "-----------------------------------------------------------------------------------------------------------"
 
 # Define an alias that sends all given arguments ($!:*) as the error message
@@ -197,5 +197,5 @@ endif
 
 unset echo verbose
 echo "-----------------------------------------------------------------------------------------------------------"
-echo "--- ENDING submit_vi_T-SHiELD.csh on `hostname` at `date`"
+echo "----- ENDING   submit_vi_T-SHiELD.csh on `hostname` at `date`"
 echo "-----------------------------------------------------------------------------------------------------------"
