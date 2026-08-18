@@ -28,7 +28,7 @@
 # =================================================
 
 echo "---------------------------------------------------------------------------------------------------------"
-echo "--- STARTING run_retro.sh on $(hostname) at $(date)"
+echo "----- STARTING run_retro.sh on $(hostname) at $(date)"
 echo "---------------------------------------------------------------------------------------------------------"
 
 export setx=${setx:-'set +x'}
@@ -36,13 +36,13 @@ PS4='+ [$(date +"%H:%M:%S")] run_retro.sh line ${LINENO}: '
 ${setx}
 
 # ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
-modelname='T-SHiELD_new'  #SHiELD|T-SHiELD
+modelname='T-SHiELD_new' #_new'  #SHiELD|T-SHiELD
 export run_fcst='NO'  #YES|NO
 #export min_wind=20   #For "VItest01"
 #VIlabel='RERUN'      #VItest01|RERUN
 do_PART1='YES'        #YES|NO (Running submit_vi_${modelname}.csh)
-do_PART2='NO'         #YES|NO (Archiving/moving the tc_vitals data (for abnormal VI tests))
-do_PART3='NO'         #YES|NO (Rename the "vi" output using ${VIlabel})
+do_PART2='NO'         #YES|NO (Archiving/moving the tc_vitals data (for abnormal VI tests)) #TODO: Needs improvement (out of order)
+do_PART3='NO'         #YES|NO (Rename the "vi" output using ${VIlabel})                     #TODO: Needs improvement (out of order)
 # ++++++++++++++  END  OF MAIN USER SETTINGS +++++++++++++++ #
 
 # ++++++++++++++ START OF OTHER USER SETTINGS ++++++++++++++ #
@@ -75,11 +75,22 @@ do
   YMD=${YMDH:0:8}
   CYC=${YMDH:8:2}
   DATE="${YMD}.${CYC}Z"
+  workDir=/gpfs/f5/gfdl_w/scratch/Matthew.Morin/vi_work/${modelname}/${YMDH}
   ICDir=${ICDirbase}/${DATE}_IC
   stdout=${ICDir}/submit_vi_${modelname}.out
+  tcvitals1=${tcvitDir}/observed_all/tcvitals_${YMDH}.txt
+  tcvitals2=${tcvitDir}/processed/${YMDH}
 
   if [ ${do_PART1} == 'YES' ]; then
     # PART1: Running submit_vi_${modelname}.csh
+    if [ -d ${workDir} ]; then
+      echo "WARNING: ${workDir} already exists! Move or remove before proceeding. Exiting..."
+      exit 1
+    fi
+    if [ -f ${tcvitals1} -o -d ${tcvitals2} ]; then
+      echo "WARNING: ${tcvitals1} and/or ${tcvitals2} already exists! Move or remove before proceeding. Exiting..."
+      exit 1
+    fi
     if [ ! -f ${ICDir}/${ICfile} ]; then
       echo "ALERT: No ICs for ${DATE}"
       echo "${YMDH}" >> ${ICsNeeded}
@@ -101,18 +112,18 @@ do
     # PART2: Archiving/moving the tc_vitals data (for abnormal VI tests)
     cd ${rundir}
     echo "mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${VIlabel}.txt"
-    #mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${VIlabel}.txt
     echo "mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${VIlabel}"
-    #mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${VIlabel}
+    mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${VIlabel}.txt || exit 1
+    mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${VIlabel} || exit 1
   fi
 
   if [ ${do_PART3} == 'YES' ]; then
     # PART3: Rename the "vi" output using ${VIlabel}
     cd ${ICDir} || exit 1
-    for vifile in $(find . -maxdepth 1 -type f -name "*vi*" -mtime -1)
+    for vifile in $(find . -maxdepth 1 -type f -name "*vi_*" -mtime -1)
     do
       echo "rename vi ${VIlabel} ${vifile}"
-      rename vi ${VIlabel} ${vifile}
+      rename vi ${VIlabel} ${vifile} || exit 1
     done
   fi
 
@@ -122,5 +133,5 @@ done # End of DATE loop
 
 set +x
 echo "---------------------------------------------------------------------------------------------------------"
-echo "--- ENDING run_retro.sh on $(hostname) at $(date)"
+echo "----- ENDING   run_retro.sh on $(hostname) at $(date)"
 echo "---------------------------------------------------------------------------------------------------------"
