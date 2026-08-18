@@ -24,20 +24,23 @@
 #   ---
 #
 # NOTES:
-#   ---
+#   --- cpus-per-task=16       # Explicitly give each task 16 cores & 16x memory share
+#   --- exclusive              # Grant the job full access to the node's entire RAM
 #
 # TODO:
-#   ---
+#   --- Sync with vi_SHiELD.sh
 #
 # UPDATES:
 #   [2025AUG22] Partial sync with vi_SHiELD.sh (e.g., added documentation header; added use of $run_fcst)
 #   [2025SEP09] Reduced wall clock; Partial sync with vi_SHiELD.sh [e.g., added "T-SHiELD" to work_base_dir, added crfactor (set to orig. value), ICTILElist]
 #   [2026MAY19] Cosmetic mods. (synced to SHiELD)
+#   [2026AUG17] Added EXIT_CODES_SUM; Cosmetic mods.
+#   [2026AUG18] Added "time -v" to every program run herein; Added a memory usage summary; Code cleanup; Cosmetic mods.
 # =================================================
 
-echo -e "---------------------------------------------------------------------------------------------------------"
-echo -e "vvvvvvvvvvvvvvvvvvvv STARTING vi_T-SHiELD.sh on $(hostname) at $(date)"
-echo -e "---------------------------------------------------------------------------------------------------------\n"
+echo "---------------------------------------------------------------------------------------------------------"
+echo "----- STARTING vi_T-SHiELD.sh on $(hostname) at $(date)"
+echo "---------------------------------------------------------------------------------------------------------"
 
 source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1 # KGao 07/02/2024 fix
 ulimit
@@ -45,7 +48,6 @@ ulimit
 setx=${setx:-'set -x'}
 PS4='+ [$(date +"%H:%M:%S")] vi_T-SHiELD.sh line ${LINENO}: '
 ${setx}
-#set -e # Do not allow the job to proceed if VI failed
 
 #===============================================================================
 # ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
@@ -68,7 +70,7 @@ ICTILElist='7'     #TODO: Sync with vi_SHiELD.sh
 #echo "ICTILElist: ${ICTILElist[*]}"
 
 ## Loop over tile numbers and extract corresponding storm IDs #TODO: Sync with vi_SHiELD.sh
-# Loop over tile numbers #TODO
+# Loop over tile numbers
 for ic_tile in "${ICTILElist[@]}"; do
   #STORMIDlist=($(for item in $VITASKlist; do
   #  if [[ $item == *_tile$ic_tile ]]; then
@@ -83,7 +85,6 @@ for ic_tile in "${ICTILElist[@]}"; do
     ((stormnum = stormnum + 1))
     export version=${stormnum}
 
-    #MJM
     BASINID=${STORMID:2:1}
     case ${BASINID} in
       L) BASIN='AL';;
@@ -141,12 +142,10 @@ for ic_tile in "${ICTILElist[@]}"; do
     # -- code dir
     export USHhafs=${HOMEhafs}/ush
     export EXEChafs=${HOMEhafs}/sorc/hafs_tools.fd/${exec}/
-    #export EXEChafs=/autofs/ncrc-svm1_home1/Kun.Gao/VI/HAFS_tools/sorc/hafs_tools.fd/exec_fix_new/ # MJM/KG testing 2025SEP10
-    #echo "WARNING: Using VI tools in EXEChafs=${EXEChafs}"
     export FIXhafs=${HOMEhafs}/fix
 
-    export APRUNC="srun --ntasks=8 --export=ALL"
-    export APRUNC1="srun --ntasks=1 --export=ALL"
+    export APRUNC="srun --ntasks=8 --export=ALL /usr/bin/time -v"
+    export APRUNC1="srun --ntasks=1 --export=ALL /usr/bin/time -v"
     export DATOOL=${EXEChafs}/hafs_datool.x
 
     # -- activating or deactivating certain steps
@@ -201,6 +200,8 @@ for ic_tile in "${ICTILElist[@]}"; do
       ${APRUNC1} ${DATOOL} hafsvi_create_nc --in_dir=${work_dir_ic} \
                                             --zsel=${zind_str} \
                                             --out_file=${ic_file_for_vi}
+      EXIT_CODE=$?; (( EXIT_CODES_SUM += ${EXIT_CODE} ))
+
       # --- part 2
       # select data in a small box
 
@@ -218,6 +219,8 @@ for ic_tile in "${ICTILElist[@]}"; do
                                          --vortexradius=${vortexradius} --res=${res} \
                                          --nestdoms=${nest_grids} \
                                          --out_file=vi_inp_${vortexradius}deg${res/\./p}.bin
+      EXIT_CODE=$?; (( EXIT_CODES_SUM += ${EXIT_CODE} ))
+
       vortexradius=${deg_box2}
       res=${res_box2}
       ${APRUNC1} ${DATOOL} hafsvi_preproc_ic --in_dir=${work_dir_ic} \
@@ -227,6 +230,8 @@ for ic_tile in "${ICTILElist[@]}"; do
                                          --vortexradius=${vortexradius} --res=${res} \
                                          --nestdoms=${nest_grids} \
                                          --out_file=vi_inp_${vortexradius}deg${res/\./p}.bin
+      EXIT_CODE=$?; (( EXIT_CODES_SUM += ${EXIT_CODE} ))
+
     fi
 
     #===============================================================================
@@ -275,10 +280,10 @@ for ic_tile in "${ICTILElist[@]}"; do
       ln -sf storm_radius                  fort.85
 
       ln -sf ${EXEChafs}/hafs_vi_split.x ./
-      echo ${gesfhr} $ibgs $vmax_vit $iflag_cold ${crfactor} | ./hafs_vi_split.x #MJM
-
+      echo ${gesfhr} $ibgs $vmax_vit $iflag_cold ${crfactor} | /usr/bin/time -v ./hafs_vi_split.x
+      EXIT_CODE=$?; (( EXIT_CODES_SUM += ${EXIT_CODE} ))
       # KGao - check if command executed successfully
-      if [ $? -eq 0 ]; then
+      if [ "${EXIT_CODE}" -eq 0 ]; then
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI split step executed successfully"
       else
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI split step failed"
@@ -308,9 +313,10 @@ for ic_tile in "${ICTILElist[@]}"; do
       ln -sf storm_sym fort.23
 
       ln -sf ${EXEChafs}/hafs_vi_anl_pert.x ./
-      echo 6 ${BASIN} ${initopt} | ./hafs_vi_anl_pert.x
+      echo 6 ${BASIN} ${initopt} | /usr/bin/time -v ./hafs_vi_anl_pert.x
+      EXIT_CODE=$?; (( EXIT_CODES_SUM += ${EXIT_CODE} ))
       # KGao - check if command executed successfully
-      if [ $? -eq 0 ]; then
+      if [ "${EXIT_CODE}" -eq 0 ]; then
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_pert step executed successfully"
       else
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_pert step failed"
@@ -345,9 +351,10 @@ for ic_tile in "${ICTILElist[@]}"; do
       ln -sf storm_anl_combine             fort.56
 
       ln -sf ${EXEChafs}/hafs_vi_anl_combine.x ./
-      echo ${gesfhr} ${BASIN} ${gfs_flag} ${initopt} | ./hafs_vi_anl_combine.x
+      echo ${gesfhr} ${BASIN} ${gfs_flag} ${initopt} | /usr/bin/time -v ./hafs_vi_anl_combine.x
+      EXIT_CODE=$?; (( EXIT_CODES_SUM += ${EXIT_CODE} ))
       # KGao - check if command executed successfully
-      if [ $? -eq 0 ]; then
+      if [ "${EXIT_CODE}" -eq 0 ]; then
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_combine step executed successfully"
       else
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_combine step failed"
@@ -385,9 +392,10 @@ for ic_tile in "${ICTILElist[@]}"; do
         ln -sf storm_anl_enhance                     fort.56
 
         ln -sf ${EXEChafs}/hafs_vi_anl_enhance.x ./
-        echo 6 ${BASIN} ${iflag_cold} | ./hafs_vi_anl_enhance.x
+        echo 6 ${BASIN} ${iflag_cold} | /usr/bin/time -v ./hafs_vi_anl_enhance.x
+        EXIT_CODE=$?; (( EXIT_CODES_SUM += ${EXIT_CODE} ))
         # KGao - check if command executed successfully
-        if [ $? -eq 0 ]; then
+        if [ "${EXIT_CODE}" -eq 0 ]; then
           echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_enhance step executed successfully"
         else
           echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_enhance step failed"
@@ -411,41 +419,43 @@ for ic_tile in "${ICTILElist[@]}"; do
                                    --infile_date=${CDATE:0:8}.${CDATE:8:2}0000 \
                                    --nestdoms=${nest_grids} \
                                    --out_dir=${work_dir_ic}
-    #                              [--relaxzone=50 (grids, default is 30) ]
-    #                              [--debug_level=10 (default is 1) ]
-    #                              [--interpolation_points=5 (default is 4, range 1-500) ]
+                                  #[--relaxzone=50 (grids, default is 30) ]
+                                  #[--debug_level=10 (default is 1) ]
+                                  #[--interpolation_points=5 (default is 4, range 1-500) ]
+      EXIT_CODE=$?; (( EXIT_CODES_SUM += ${EXIT_CODE} ))
 
-     # --- part 2: update source ic file
-     # update var adjusted by VI (wind increment on a-grid will be remapped on to c-grid)
-     # here we put the final-adjusted IC file in the dst dir directly
-     cp $ic_file_ori ${work_dir_ic}/gfs_data_vi.nc
-     ${APRUNC1} ${DATOOL} hafsvi_update_nc --in_dir=${work_dir_ic} \
-                                           --zsel=${zind_str} \
-                                           --out_file=${work_dir_ic}/gfs_data_vi.nc
+      # --- part 2: update source ic file
+      # update var adjusted by VI (wind increment on a-grid will be remapped on to c-grid)
+      # here we put the final-adjusted IC file in the dst dir directly
+      cp $ic_file_ori ${work_dir_ic}/gfs_data_vi.nc
+      ${APRUNC1} ${DATOOL} hafsvi_update_nc --in_dir=${work_dir_ic} \
+                                            --zsel=${zind_str} \
+                                            --out_file=${work_dir_ic}/gfs_data_vi.nc
+      EXIT_CODE=$?; (( EXIT_CODES_SUM += ${EXIT_CODE} ))
 
-     # --- step 3: check
-     # if ic files after VI differs from ori file, then VI was successfully
-     module load cdo nco
-     mkdir -p $work_dir/data/check
-     cd $work_dir/data/check
-     cdo selvar,u_w -sellevel,128 ${work_dir_ic}/gfs_data.nc u_before.nc
-     cdo selvar,u_w -sellevel,128 ${work_dir_ic}/gfs_data_vi.nc u_after.nc
-     cdo selvar,sphum -sellevel,128 ${work_dir_ic}/gfs_data.nc sphum_before.nc
-     cdo selvar,sphum -sellevel,128 ${work_dir_ic}/gfs_data_vi.nc sphum_after.nc
+      # --- step 3: check
+      # if ic files after VI differs from ori file, then VI was successfully
+      module load cdo nco
+      mkdir -p $work_dir/data/check
+      cd $work_dir/data/check
+      cdo selvar,u_w -sellevel,128 ${work_dir_ic}/gfs_data.nc u_before.nc
+      cdo selvar,u_w -sellevel,128 ${work_dir_ic}/gfs_data_vi.nc u_after.nc
+      cdo selvar,sphum -sellevel,128 ${work_dir_ic}/gfs_data.nc sphum_before.nc
+      cdo selvar,sphum -sellevel,128 ${work_dir_ic}/gfs_data_vi.nc sphum_after.nc
 
-     testok1=`cdo -diff u_before.nc u_after.nc | sed -n '/records differ$/p' | tr -s " " | cut -f2 -d" "`
-     testok2=`cdo -diff sphum_before.nc sphum_after.nc | sed -n '/records differ$/p' | tr -s " " | cut -f2 -d" "`
+      testok1=`cdo -diff u_before.nc u_after.nc | sed -n '/records differ$/p' | tr -s " " | cut -f2 -d" "`
+      testok2=`cdo -diff sphum_before.nc sphum_after.nc | sed -n '/records differ$/p' | tr -s " " | cut -f2 -d" "`
 
-     if [ ${testok1} -eq 1 ]  && [ ${testok2} -eq 1 ]; then
-        echo "VILOG ${STORMID}_tile${ic_tile}: VI went successfully"
-        ncatted -h -O -a vi_history,global,a,c," ${STORMID}" ${work_dir_ic}/gfs_data_vi.nc
-        cp ${work_dir_ic}/gfs_data_vi.nc ${ic_file_dst}
-        #rm -rf ${work_dir} #TODO: Do not remove this, for now
-     else
-        echo "VILOG ${STORMID}_tile${ic_tile}: ERROR: VI did not work"
-     fi
+      if [ ${testok1} -eq 1 ]  && [ ${testok2} -eq 1 ]; then
+         echo "VILOG ${STORMID}_tile${ic_tile}: VI went successfully"
+         ncatted -h -O -a vi_history,global,a,c," ${STORMID}" ${work_dir_ic}/gfs_data_vi.nc
+         cp ${work_dir_ic}/gfs_data_vi.nc ${ic_file_dst}
+         #rm -rf ${work_dir} #TODO: Do not remove this, for now
+      else
+         echo "VILOG ${STORMID}_tile${ic_tile}: ERROR: VI did not work"
+      fi
 
-    fi
+    fi # End of do_post check
 
   done # End of STORMID loop
 
@@ -455,16 +465,20 @@ if [ "${run_fcst}" == 'YES' ]; then
   #===============================================================================
   # trigger forecast job regardless of whether VI is successful
   # uncomment the lines below to submit the forecast job
-  echo 'VILOG: VI is done; Submitting forecast job'
+  echo "VILOG: VI is done [EXIT_CODES_SUM=${EXIT_CODES_SUM}]; Submitting forecast job"
   runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
   runmode='realtime'
   cd $(dirname ${runscript})
   ${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
 else
-  echo 'VILOG: VI is done; ***Not*** submitting forecast job'
+  echo "VILOG: VI is done [EXIT_CODES_SUM=${EXIT_CODES_SUM}]; ***Not*** submitting forecast job"
 fi
+
+echo "=== Memory Usage Summary ==="
+sacct -j ${SLURM_JOB_ID} --format=JobID,JobName,AllocCPUs,MaxRSS,MaxVMSize,State
 
 set +x
 echo "---------------------------------------------------------------------------------------------------------"
-echo "^^^^^^^^^^^^^^^^^^^^ ENDING vi_T-SHiELD.sh on $(hostname) at $(date)"
+echo "----- ENDING   vi_T-SHiELD.sh on $(hostname) at $(date)"
 echo "---------------------------------------------------------------------------------------------------------"
+exit ${EXIT_CODES_SUM}
