@@ -14,10 +14,11 @@
 #   ---
 #
 # TODO:
-#   ---
+#   --- Merge any useful code from ./misc/run_reruns.sh
+#   --- Automate run_retro.sh launch (need to add option there to accept YMDH as an input arg. instead of using YMDHlist.txt)
 #
 # UPDATES:
-#   [20???????]
+#   [2026AUG20] Finished initial development
 # =================================================
 
 echo "---------------------------------------------------------------------------------------------------------"
