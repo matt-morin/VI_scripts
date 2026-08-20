@@ -36,7 +36,7 @@ PS4='+ [$(date +"%H:%M:%S")] run_retro.sh line ${LINENO}: '
 ${setx}
 
 # ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
-modelname='T-SHiELD_new' #_new'  #SHiELD|T-SHiELD
+modelname='SHiELD'    #SHiELD|T-SHiELD|T-SHiELD_new
 export run_fcst='NO'  #YES|NO
 #export min_wind=20   #For "VItest01"
 #VIlabel='RERUN'      #VItest01|RERUN
