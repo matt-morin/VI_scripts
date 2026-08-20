@@ -31,7 +31,7 @@ ${setx}
 # ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
 YMDH=2025082100
 modelname='SHiELD'      # SHiELD|T-SHiELD|T-SHiELD_new
-RerunLabel='RERUN2'       # ORIG|RERUN|BAD2
+RerunLabel='RERUN4'       # ORIG|RERUN1|BAD2
 #
 rundir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea
 datefile=${rundir}/YMDHlist.txt
