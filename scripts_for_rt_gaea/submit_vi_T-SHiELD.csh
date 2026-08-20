@@ -34,6 +34,7 @@
 #   [2025AUG22] Added use of $run_fcst
 #   [2025SEP09] Added "T-SHiELD" to tc_vitals directory; Partial sync with submit_vi_SHiELD.csh (e.g., added $tmpdir, $BASINID_list, $ic_tile_list)
 #   [2026MAY19] Cosmetic and STDO mods. (synced with SHiELD); Switched an "exit 1" to "continue" (to match SHiELD version)
+#   [2026AUG20] Synced with submit_vi_T-SHiELD_new.csh; Removed trailing forward slash from path definitions
 # =================================================
 
 echo "-----------------------------------------------------------------------------------------------------------"
@@ -76,7 +77,7 @@ set BASINID_list = 'L' # MJM --- 'L E C W S P A B'
 
 # ic files
 set GRID = 'C768r10n4_atl_new'
-set ic_base = /gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/${GRID}/
+set ic_base = /gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/${GRID}
 set ic_tile_list = '7' # MJM --- Tile 7 has been tested with this system
 
 # vi criteria (will be passed to python scripts that generated TC files)
@@ -87,21 +88,21 @@ set max_lat = 35.
 # === specific dir and file name settings
 
 # scripts
-set vi_tool_dir = ${vi_base}/HAFS_tools/
-set vi_driver_dir = ${vi_base}/VI_scripts/scripts_for_rt_gaea/
+set vi_tool_dir = ${vi_base}/HAFS_tools
+set vi_driver_dir = ${vi_base}/VI_scripts/scripts_for_rt_gaea
 set vi_script = ${vi_driver_dir}/vi_T-SHiELD.sh
 
 # tc files
 set vital_base = ${vi_driver_dir}/tc_vitals/T-SHiELD
 set vital_dir_obs = ${vital_base}/observed_all
-set vital_dir_processed = ${vital_base}/processed/
+set vital_dir_processed = ${vital_base}/processed
 set obs_vital = ${vital_dir_obs}/tcvitals_${CDATE}.txt # this is the obs vital at given time
 set tmpvit = ${tempdir}/tmpvit
 
 # ics
 set DATE = `echo ${CDATE} | cut -c1-8`
 set hh = `echo ${CDATE} | cut -c9-10`
-set ic_dir = ${ic_base}/${DATE}.${hh}Z_IC/
+set ic_dir = ${ic_base}/${DATE}.${hh}Z_IC
 
 mkdir -p $vital_dir_obs
 mkdir -p $vital_dir_processed
@@ -139,9 +140,9 @@ if ( ! -e $vitfiles[1] ) then
   # -d: date          -> current date as CDATE
   # -w: min_wind      -> min Vmax for VI
   # -l: max_lat       -> max initial lat for VI
-  # -i: ic_base       -> base dir for ic, e.g., '/lustre/f2/dev/gfdl/Kun.Gao/SHiELD_IC_v16/'+grid+'/'
+  # -i: ic_base       -> base dir for ic, e.g., '/lustre/f2/dev/gfdl/Kun.Gao/SHiELD_IC_v16/'+grid
   # -f: vital_file    -> obs vital messages as a txt file, e.g., vital_base+'observed_all/tcvitals_'+date+'.txt'
-  # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed/'
+  # -o: vital_dir_out -> where processed tc txt files are saved, e.g., vital_base+'/processed'
   # -t: ic_tile       -> tile number for ic, e.g., 1
 
   foreach ic_tile ( ${ic_tile_list}  ) # MJM
