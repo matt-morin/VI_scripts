@@ -4,6 +4,7 @@
 #SBATCH --account=gfdl_w
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
+#SBATCH --exclusive
 #SBATCH --time=01:00:00
 #SBATCH --mail-user=matthew.morin@noaa.gov
 #SBATCH --mail-type=fail
@@ -38,14 +39,19 @@
 #   [2026JUN05] Finished development; Removed trailing forward slash from path definitions
 #   [2026AUG17] Added EXIT_CODES_SUM; Cosmetic mods.
 #   [2026AUG18] Added "time -v" to every program run herein; Added a memory usage summary; Code cleanup; Cosmetic mods.
+#   [2026AUG20] Added --exclusive to the SBATCH header in an attempt to avoid random crashes; Set HUGETLB_VERBOSE=0 to suppress all warnings and info messages from the huge page library (to reduce log file clutter); Added batch job environment logging
 # =================================================
 
 echo "---------------------------------------------------------------------------------------------------------"
 echo "----- STARTING vi_T-SHiELD_new.sh on $(hostname) at $(date)"
 echo "---------------------------------------------------------------------------------------------------------"
 
+echo "================================================"
 source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1 # KGao 07/02/2024 fix
-ulimit
+export HUGETLB_VERBOSE=0
+ulimit -a
+env
+echo "================================================"
 
 setx=${setx:-'set -x'}
 PS4='+ [$(date +"%H:%M:%S")] vi_T-SHiELD_new.sh line ${LINENO}: '
@@ -169,7 +175,7 @@ for ic_tile in "${ICTILElist[@]}"; do
     set +x
     source ${USHhafs}/hafs_pre_job.sh.inc > /dev/null 2>&1
     module list
-    set -x
+    { ${setx}; } 2>/dev/null
 
     #===============================================================================
     # prepare data
@@ -437,7 +443,9 @@ for ic_tile in "${ICTILElist[@]}"; do
 
       # --- step 3: check
       # if ic files after VI differs from ori file, then VI was successfully
+      set +x
       module load cdo nco
+      { ${setx}; } 2>/dev/null
       mkdir -p $work_dir/data/check
       cd $work_dir/data/check
       cdo selvar,u_w -sellevel,128 ${work_dir_ic}/gfs_data.nc u_before.nc
