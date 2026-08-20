@@ -4,6 +4,7 @@
 #SBATCH --account=gfdl_w
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
+#SBATCH --exclusive
 #SBATCH --time=01:00:00
 #SBATCH --mail-user=matthew.morin@noaa.gov
 #SBATCH --mail-type=fail
@@ -36,14 +37,19 @@
 #   [2026MAY19] Cosmetic mods. (synced to SHiELD)
 #   [2026AUG17] Added EXIT_CODES_SUM; Cosmetic mods.
 #   [2026AUG18] Added "time -v" to every program run herein; Added a memory usage summary; Code cleanup; Cosmetic mods.
+#   [2026AUG20] Synced with vi_T-SHiELD_new.sh; Removed trailing forward slash from path definitions; Added --exclusive to the SBATCH header in an attempt to avoid random crashes; Set HUGETLB_VERBOSE=0 to suppress all warnings and info messages from the huge page library (to reduce log file clutter); Added batch job environment logging
 # =================================================
 
 echo "---------------------------------------------------------------------------------------------------------"
 echo "----- STARTING vi_T-SHiELD.sh on $(hostname) at $(date)"
 echo "---------------------------------------------------------------------------------------------------------"
 
+echo "================================================"
 source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1 # KGao 07/02/2024 fix
-ulimit
+export HUGETLB_VERBOSE=0
+ulimit -a
+env
+echo "================================================"
 
 setx=${setx:-'set -x'}
 PS4='+ [$(date +"%H:%M:%S")] vi_T-SHiELD.sh line ${LINENO}: '
@@ -100,9 +106,9 @@ for ic_tile in "${ICTILElist[@]}"; do
     esac
 
     export HOMEhafs=${HOME}/NGGPS/VI/HAFS_tools/ # consistent with HAFS naming
-    export ic_base_dir=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n4_atl_new/
-    export vital_base_dir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/tc_vitals/T-SHiELD/processed/
-    export work_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/T-SHiELD/
+    export ic_base_dir=/gpfs/f5/gfdl_w/proj-shared/${USER}/SHiELD_INPUT_DATA/variable.v202311/C768r10n4_atl_new
+    export vital_base_dir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/tc_vitals/T-SHiELD/processed
+    export work_base_dir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/T-SHiELD
 
     # -- vi options
     export zind_str=29 # 28 - same as v1
@@ -119,8 +125,8 @@ for ic_tile in "${ICTILElist[@]}"; do
     export iflag_cold=1 # cold start
 
     # -- data dir
-    export grid_dir=${ic_base_dir}/GRID/
-    export ic_dir_src=${ic_base_dir}/${CDATE:0:8}.${CDATE:8:2}Z_IC/
+    export grid_dir=${ic_base_dir}/GRID
+    export ic_dir_src=${ic_base_dir}/${CDATE:0:8}.${CDATE:8:2}Z_IC
     export ic_dir_dst=${ic_dir_src}
     if [ ${stormnum} -gt 1 ]; then
       export ic_file_ori=${ic_dir_src}/gfs_data.tile${ic_tile}_vi_$((stormnum-1)).nc
@@ -135,13 +141,13 @@ for ic_tile in "${ICTILElist[@]}"; do
 
     # -- work dir
     export work_dir=${work_base_dir}/${CDATE}/${STORMID}
-    export work_dir_ic=${work_dir}/data/ic/
-    export work_dir_vital=${work_dir}/data/vital/
-    export work_dir_vi=${work_dir}/atm_vi/
+    export work_dir_ic=${work_dir}/data/ic
+    export work_dir_vital=${work_dir}/data/vital
+    export work_dir_vi=${work_dir}/atm_vi
 
     # -- code dir
     export USHhafs=${HOMEhafs}/ush
-    export EXEChafs=${HOMEhafs}/sorc/hafs_tools.fd/${exec}/
+    export EXEChafs=${HOMEhafs}/sorc/hafs_tools.fd/${exec}
     export FIXhafs=${HOMEhafs}/fix
 
     export APRUNC="srun --ntasks=8 --export=ALL /usr/bin/time -v"
@@ -167,14 +173,14 @@ for ic_tile in "${ICTILElist[@]}"; do
     set +x
     source ${USHhafs}/hafs_pre_job.sh.inc > /dev/null 2>&1
     module list
-    set -x
+    { ${setx}; } 2>/dev/null
 
     #===============================================================================
     # prepare data
 
     # tc files
-    cp $vital_base_dir/$CDATE/${STORMID}/tcvitals.vi              $work_dir_vital/
-    cp $vital_base_dir/$CDATE/${STORMID}/${STORMID}*atcfunix.all  $work_dir_vital/
+    cp $vital_base_dir/$CDATE/${STORMID}/tcvitals.vi              $work_dir_vital
+    cp $vital_base_dir/$CDATE/${STORMID}/${STORMID}*atcfunix.all  $work_dir_vital
 
     # prepare ic files
     ln -sf ${grid_dir}/grid_spec.nest02.tile${ic_tile}.nc ${work_dir_ic}/grid_spec.nc
@@ -237,9 +243,9 @@ for ic_tile in "${ICTILElist[@]}"; do
     #===============================================================================
     # VI steps
 
-    work_dir_split=${work_dir_vi}/split_init/
-    work_dir_pert=${work_dir_vi}/anl_pert_init/
-    work_dir_combine=${work_dir_vi}/anl_storm/
+    work_dir_split=${work_dir_vi}/split_init
+    work_dir_pert=${work_dir_vi}/anl_pert_init
+    work_dir_combine=${work_dir_vi}/anl_storm
 
     # --- 1. split step
 
@@ -435,7 +441,9 @@ for ic_tile in "${ICTILElist[@]}"; do
 
       # --- step 3: check
       # if ic files after VI differs from ori file, then VI was successfully
+      set +x
       module load cdo nco
+      { ${setx}; } 2>/dev/null
       mkdir -p $work_dir/data/check
       cd $work_dir/data/check
       cdo selvar,u_w -sellevel,128 ${work_dir_ic}/gfs_data.nc u_before.nc
