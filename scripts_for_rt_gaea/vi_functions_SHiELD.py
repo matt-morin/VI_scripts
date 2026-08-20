@@ -1,3 +1,11 @@
+"""
+TODO:
+    - 2026-06-05: Try to create a unified version of this script that can handle the 3.25-km and 2.6-km T-SHiELD, as well as the 6.5-km SHiELD
+
+UPDATES:
+    -
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
