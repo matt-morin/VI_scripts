@@ -5,8 +5,11 @@
 tc_vitals/
 scripts_for_rt_gaea_DEV/
 scripts_for_rt_gaea/DEV/
+scripts_for_rt_gaea/misc/
 scripts_for_rt_gaea/hafs_pre_job.sh.inc
 scripts_for_rt_gaea/tcutil_multistorm_sort_gfdl.py
 scripts_for_rt_gaea/vi_functions_T-SHiELD.py
 scripts_for_rt_gaea/vi_functions_T-SHiELD_new.py
 scripts_for_rt_gaea/YMDHlist.txt
+scripts_for_rt_gaea/README_Relauncher
+scripts_for_rt_gaea/run_ncdiff.sh
