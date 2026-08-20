@@ -1,9 +1,18 @@
 #! /usr/bin/env python3
+
+"""
+TODO:
+    - 2026-06-05: Try to create a unified version of this script that can handle the 3.25-km and 2.6-km T-SHiELD, as well as the 6.5-km SHiELD
+    - 2026-06-05: Cleanup/resolve "MJM" and "TODO" comments
+
+UPDATES:
+    - 2026-08-20: Synced with prepare_tc_files_T-SHiELD_new.py; Removed trailing forward slash from path definitions
+"""
+
 import numpy as np
 import os
 import sys
 import getopt
-
 from vi_functions_SHiELD import *
 
 # This python script generates the TC text files needed by VI
@@ -70,7 +79,7 @@ min_index_dom = int(min_dist_dom/res)
 
 grid_latt = read_nc(grid_file, 'grid_latt')
 grid_lont = read_nc(grid_file, 'grid_lont')
-ic_dir = ic_base + date[:-2]+'.'+date[-2:]+'Z_IC'
+ic_dir = ic_base + '/' + date[:-2]+'.'+date[-2:]+'Z_IC' # MJM
 
 if True:
   tc_dict = read_tcvitals(vital_file)
@@ -166,7 +175,7 @@ if True:
       # write out txt files
       do_write_out = True
       if do_write_out:
-        out_dir = vital_dir_out + date + '/' + stormID + '_tile' + ic_tile + '/' # MJM
+        out_dir = vital_dir_out + '/' + date + '/' + stormID + '_tile' + ic_tile + '/' # MJM
         out_file1 = out_dir + 'tcvitals.vi'
         out_file2 = out_dir + stormID + '.' + date + '.trak.atcfunix.all'
 
@@ -176,8 +185,8 @@ if True:
            if os.path.exists(out_file2):
               os.remove(out_file2)
            os.rmdir(out_dir)
-        if not os.path.exists(vital_dir_out + date):
-           os.mkdir(vital_dir_out + date)
+        if not os.path.exists(vital_dir_out + '/' + date): # MJM
+           os.mkdir(vital_dir_out + '/' + date) # MJM
         os.mkdir(out_dir)
 
         # generate obs tc vital file
