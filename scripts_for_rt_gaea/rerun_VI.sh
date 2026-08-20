@@ -29,9 +29,9 @@ PS4='+ [$(date +"%H:%M:%S")] run_reruns.sh line ${LINENO}: '
 ${setx}
 
 # ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
-YMDH=2025102912
-modelname='T-SHiELD_new'    # SHiELD|T-SHiELD|T-SHiELD_new
-RerunLabel='BAD8'   
+YMDH=2025082100
+modelname='SHiELD'      # SHiELD|T-SHiELD|T-SHiELD_new
+RerunLabel='RERUN2'       # ORIG|RERUN|BAD2
 #
 rundir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea
 datefile=${rundir}/YMDHlist.txt
@@ -83,7 +83,8 @@ mv -v --no-clobber ${YMDH} ${YMDH}_${RerunLabel} #|| exit 1
 
 cd ${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/
 sed -i "s/xxx${YMDH}/${YMDH}/g" YMDHlist.txt
-./run_retro.sh
+#./run_retro.sh
+echo "REMINDER: Modify run_retro.sh if needed --- TODO: Automate this"
 
 set +x
 echo "---------------------------------------------------------------------------------------------------------"
