@@ -30,9 +30,12 @@ PS4='+ [$(date +"%H:%M:%S")] run_reruns.sh line ${LINENO}: '
 ${setx}
 
 # ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
-YMDH=2025082100
-modelname='SHiELD'      # SHiELD|T-SHiELD|T-SHiELD_new
-RerunLabel='RERUN4'       # ORIG|RERUN1|BAD2
+YMDH=$1
+modelname=$2
+RerunLabel=$3
+#YMDH=2025082100
+#modelname='SHiELD'      # SHiELD|T-SHiELD|T-SHiELD_new
+#RerunLabel='ORIG'       # ORIG|RERUN1|BAD2
 #
 rundir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea
 datefile=${rundir}/YMDHlist.txt
