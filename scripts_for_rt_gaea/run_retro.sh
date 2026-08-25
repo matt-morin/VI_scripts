@@ -36,13 +36,13 @@ PS4='+ [$(date +"%H:%M:%S")] run_retro.sh line ${LINENO}: '
 ${setx}
 
 # ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
-modelname='SHiELD'    #SHiELD|T-SHiELD|T-SHiELD_new
+modelname='T-SHiELD_new'    #SHiELD|T-SHiELD|T-SHiELD_new
 export run_fcst='NO'  #YES|NO
+RerunLabel='ORIG'   #ORIG|VItest01|RERUN|CRASH1
 #export min_wind=20   #For "VItest01"
-#VIlabel='RERUN'      #VItest01|RERUN
 do_PART1='YES'        #YES|NO (Running submit_vi_${modelname}.csh)
 do_PART2='NO'         #YES|NO (Archiving/moving the tc_vitals data (for abnormal VI tests)) #TODO: Needs improvement (out of order)
-do_PART3='NO'         #YES|NO (Rename the "vi" output using ${VIlabel})                     #TODO: Needs improvement (out of order)
+do_PART3='NO'         #YES|NO (Rename the "vi" output using ${RerunLabel})                     #TODO: Needs improvement (out of order)
 # ++++++++++++++  END  OF MAIN USER SETTINGS +++++++++++++++ #
 
 # ++++++++++++++ START OF OTHER USER SETTINGS ++++++++++++++ #
@@ -64,8 +64,7 @@ njobs=$(squeue -h -u ${USER} -o '%10i %90j %12r' -t RUNNING,PENDING | grep -v 'J
 
 cd ${rundir} || exit 1
 
-for YMDH in $(cat ${datefile} | grep -v 'xxx' | sort -u)
-do
+for YMDH in $(cat ${datefile} | grep -v 'xxx' | sort -u); do
 
   if [ ${njobs} -ge ${njob_max} ]; then
     set +x; echo -e "\nNOTE: njobs (${njobs}) >= njob_max (${njob_max}). Breaking out of loop..."; ${setx}
@@ -84,12 +83,16 @@ do
   if [ ${do_PART1} == 'YES' ]; then
     # PART1: Running submit_vi_${modelname}.csh
     if [ -d ${workDir} ]; then
-      echo "WARNING: ${workDir} already exists! Move or remove before proceeding. Exiting..."
-      exit 1
+      #echo "WARNING: ${workDir} already exists! Move or remove before proceeding. Exiting..."
+      #exit 1
+      echo "WARNING: ${workDir} already exists! Running rerun_VI.sh before continuing..."
+      ./rerun_VI.sh ${YMDH} ${modelname} ${RerunLabel} || exit 1
     fi
     if [ -f ${tcvitals1} -o -d ${tcvitals2} ]; then
-      echo "WARNING: ${tcvitals1} and/or ${tcvitals2} already exists! Move or remove before proceeding. Exiting..."
-      exit 1
+      #echo "WARNING: ${tcvitals1} and/or ${tcvitals2} already exists! Move or remove before proceeding. Exiting..."
+      #exit 1
+      echo "WARNING: ${tcvitals1} and/or ${tcvitals2} already exists! Running rerun_VI.sh before continuing..."
+      ./rerun_VI.sh ${YMDH} ${modelname} ${RerunLabel} || exit 1
     fi
     if [ ! -f ${ICDir}/${ICfile} ]; then
       echo "ALERT: No ICs for ${DATE}"
@@ -111,19 +114,19 @@ do
   if [ ${do_PART2} == 'YES' ]; then
     # PART2: Archiving/moving the tc_vitals data (for abnormal VI tests)
     cd ${rundir}
-    echo "mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${VIlabel}.txt"
-    echo "mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${VIlabel}"
-    mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${VIlabel}.txt || exit 1
-    mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${VIlabel} || exit 1
+    echo "mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${RerunLabel}.txt"
+    echo "mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${RerunLabel}"
+    mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${RerunLabel}.txt || exit 1
+    mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${RerunLabel} || exit 1
   fi
 
   if [ ${do_PART3} == 'YES' ]; then
-    # PART3: Rename the "vi" output using ${VIlabel}
+    # PART3: Rename the "vi" output using ${RerunLabel}
     cd ${ICDir} || exit 1
     for vifile in $(find . -maxdepth 1 -type f -name "*vi_*" -mtime -1)
     do
-      echo "rename vi ${VIlabel} ${vifile}"
-      rename vi ${VIlabel} ${vifile} || exit 1
+      echo "rename vi ${RerunLabel} ${vifile}"
+      rename vi ${RerunLabel} ${vifile} || exit 1
     done
   fi
 
