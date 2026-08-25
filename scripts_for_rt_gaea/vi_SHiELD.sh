@@ -4,6 +4,7 @@
 #SBATCH --account=gfdl_w
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=16
 #SBATCH --exclusive
 #SBATCH --time=00:45:00
 #SBATCH --mail-user=matthew.morin@noaa.gov
@@ -40,6 +41,7 @@
 #   [2026MAY19] Cosmetic mods. (synced to T-SHiELD)
 #   [2026AUG18] Added EXIT_CODES_SUM; Added "time -v" to every program run herein; Added a memory usage summary; Code cleanup; Cosmetic mods.
 #   [2026AUG20] Synced with vi_T-SHiELD_new.sh; Removed trailing forward slash from path definitions; Added --exclusive to the SBATCH header in an attempt to avoid random crashes; Set HUGETLB_VERBOSE=0 to suppress all warnings and info messages from the huge page library (to reduce log file clutter); Added batch job environment logging
+#   [2026AUG25] Added --cpus-per-task=16 to the SBATCH header, and "ulimit -s unlimited" and "OMP_STACKSIZE=1G" in an attempt to avoid random crashes (answers reproduce); Enabled forecast launch
 # =================================================
 
 echo "---------------------------------------------------------------------------------------------------------"
@@ -49,6 +51,8 @@ echo "--------------------------------------------------------------------------
 echo "================================================"
 source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1 # KGao 07/02/2024 fix
 export HUGETLB_VERBOSE=0
+ulimit -s unlimited      # [2026AUG25] Prevents random segfault crashes
+export OMP_STACKSIZE=1G  # [2026AUG25] Prevents random segfault crashes
 ulimit -a
 env
 echo "================================================"
@@ -64,7 +68,7 @@ ${setx}
 #export VITASKlist='13L_tile1 14L_tile5'
 #
 # -- paramters to be changed by the user
-run_fcst=${run_fcst:-'NO'} #MJM TODO
+run_fcst=${run_fcst:-'YES'}
 #export version=2.5
 export exec='exec' #_${version}
 crfactor=2.5       # Controls RDST1 in hafs_vi_split.x [orig.=2.5; can gradually incr. up to 5]
@@ -478,15 +482,15 @@ for ic_tile in "${ICTILElist[@]}"; do
 done # End of ic_tile loop
 
 if [ "${run_fcst}" == 'YES' ]; then
-  exit     # TODO: Make sure this is set up correctly (need "-b ${basescript}")
   #===============================================================================
   # trigger forecast job regardless of whether VI is successful
   # uncomment the lines below to submit the forecast job
   echo "VILOG: VI is done [EXIT_CODES_SUM=${EXIT_CODES_SUM}]; Submitting forecast job"
   runscript=${HOME}/NGGPS/SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-  runmode='realtime'
+  runmode=${runmode:-'realtime'}
+  basescript='RUN_SHiELD_rt2024_C1536_aero_GFSv16_wVI.csh'
   cd $(dirname ${runscript})
-  ${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999
+  ${runscript} -y "${CDATE}" -a "${SLURM_JOB_ACCOUNT}" -q "${SLURM_JOB_QOS}" -m "${runmode}" -n 999 -b "${basescript}"
 else
   echo "VILOG: VI is done [EXIT_CODES_SUM=${EXIT_CODES_SUM}]; ***Not*** submitting forecast job"
 fi
