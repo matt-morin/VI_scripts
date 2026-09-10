@@ -56,13 +56,13 @@ unlimit
 # === get the model initialization date&time from command-line argument
 set CDATE = $1
 
-if (! $?SLURM_JOB_QOS) then
+#if (! $?SLURM_JOB_QOS) then #[2026AUG25] TODO: Re-enable when needed
   setenv USRDEF_QOS 'normal'
-else
-  setenv USRDEF_QOS $SLURM_JOB_QOS
-endif
+#else
+#  setenv USRDEF_QOS $SLURM_JOB_QOS
+#endif
 if (! $?run_fcst) then
-  setenv run_fcst 'NO' # MJM --- TODO
+  setenv run_fcst 'YES'
 else
   setenv run_fcst ${run_fcst}
 endif
@@ -185,15 +185,15 @@ if ( -e $vitfiles[1] ) then
     continue
   endif
 
-else # if VI not triggered, trigger forecast job from here
-
-  if ( "${run_fcst}" == 'YES' ) then
-    # submit the forecast job
-    echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
-    set runscript = ${HOME}/NGGPS/SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
-    set runmode = 'realtime'
-    ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
-  endif
+#else # if VI not triggered, trigger forecast job from here
+#
+#  if ( "${run_fcst}" == 'YES' ) then
+#    # submit the forecast job
+#    echo 'VILOG: No need for VI; Submitting forecast job for' ${CDATE}
+#    set runscript = ${HOME}/NGGPS/SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
+#    set runmode = 'realtime'
+#    ${runscript} -y "${CDATE}" -a 'gfdl_w' -m "${runmode}" -n 999
+#  endif
 
 endif
 
