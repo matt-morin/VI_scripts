@@ -40,6 +40,7 @@
 #   [2026AUG18] Added "time -v" to every program run herein; Added a memory usage summary; Code cleanup; Cosmetic mods.
 #   [2026AUG20] Synced with vi_T-SHiELD_new.sh; Removed trailing forward slash from path definitions; Added --exclusive to the SBATCH header in an attempt to avoid random crashes; Set HUGETLB_VERBOSE=0 to suppress all warnings and info messages from the huge page library (to reduce log file clutter); Added batch job environment logging
 #   [2026AUG25] Added --cpus-per-task=16 to the SBATCH header, and "ulimit -s unlimited" and "OMP_STACKSIZE=1G" in an attempt to avoid random crashes (answers reproduce)
+#   [2026SEP08] Re-enabled "exit 1" after VI step crashes
 # =================================================
 
 echo "---------------------------------------------------------------------------------------------------------"
@@ -89,8 +90,7 @@ for ic_tile in "${ICTILElist[@]}"; do
   #done | sort | uniq))
 
   stormnum=0
-  for STORMID in ${STORMIDlist}
-  do
+  for STORMID in ${STORMIDlist}; do
 
     ((stormnum = stormnum + 1))
     export version=${stormnum}
@@ -297,7 +297,7 @@ for ic_tile in "${ICTILElist[@]}"; do
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI split step executed successfully"
       else
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI split step failed"
-        #exit 1
+        exit 1
       fi
 
     fi
@@ -330,7 +330,7 @@ for ic_tile in "${ICTILElist[@]}"; do
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_pert step executed successfully"
       else
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_pert step failed"
-        #exit 1
+        exit 1
       fi
     fi
 
@@ -368,7 +368,7 @@ for ic_tile in "${ICTILElist[@]}"; do
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_combine step executed successfully"
       else
         echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_combine step failed"
-        #exit 1
+        exit 1
       fi
 
       if [ -s storm_anl_combine ]; then
@@ -409,7 +409,7 @@ for ic_tile in "${ICTILElist[@]}"; do
           echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_enhance step executed successfully"
         else
           echo "VILOG ${STORMID}_tile${ic_tile}: === VI anl_enhance step failed"
-          #exit 1
+          exit 1
         fi
         cp -p storm_anl_enhance storm_anl
       fi
