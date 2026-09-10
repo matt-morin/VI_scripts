@@ -46,10 +46,11 @@ echo "--------------------------------------------------------------------------
 alias notify_error 'echo "\!:*" | mail -s "Error in submit_vi_T-SHiELD_new.csh" matthew.morin@noaa.gov'
 
 module load python/3.9
+unlimit
+limit coredumpsize 0
 
 set echo
 set verbose
-unlimit
 
 # === get the model initialization date&time from command-line argument
 set CDATE = $1
@@ -181,7 +182,6 @@ if ( -e $vitfiles[1] ) then
     endif
   else
     notify_error "Error: ${JOB_NAME} not launched because $ic_dst_file[1] is already available"
-    #exit 1
     continue
   endif
 
