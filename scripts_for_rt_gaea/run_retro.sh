@@ -2,7 +2,6 @@
 # =================================================
 # ${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea/run_retro.sh
 #   --- Created by Matt Morin (UCAR/GFDL) 2019JUL24
-#   --- <Description>
 #
 # USAGE:
 #   ---
@@ -36,9 +35,9 @@ PS4='+ [$(date +"%H:%M:%S")] run_retro.sh line ${LINENO}: '
 ${setx}
 
 # ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
-modelname='T-SHiELD_new'    #SHiELD|T-SHiELD|T-SHiELD_new
-export run_fcst='NO'  #YES|NO
-RerunLabel='ORIG'   #ORIG|VItest01|RERUN|CRASH1
+modelname='SHiELD'    #SHiELD|T-SHiELD|T-SHiELD_new
+run_fcst='NO'         #YES|NO
+#RerunLabel='RERUN3'  #''|ORIG|VItest01|RERUN|CRASH1 #TODO: rerun_VI.sh launch needs better place in this script
 #export min_wind=20   #For "VItest01"
 do_PART1='YES'        #YES|NO (Running submit_vi_${modelname}.csh)
 do_PART2='NO'         #YES|NO (Archiving/moving the tc_vitals data (for abnormal VI tests)) #TODO: Needs improvement (out of order)
@@ -58,9 +57,11 @@ esac
 tcvitDir=tc_vitals/${modelname}
 datefile=${rundir}/YMDHlist.txt
 ICsNeeded=${rundir}/ICsNeeded.log
-njob_max=200
+njob_max=20
 njobs=$(squeue -h -u ${USER} -o '%10i %90j %12r' -t RUNNING,PENDING | grep -v 'JobHeldUser' | grep -c 'vi_ic_')
 # ++++++++++++++  END  OF OTHER USER SETTINGS ++++++++++++++ #
+
+export run_fcst
 
 cd ${rundir} || exit 1
 
@@ -83,16 +84,22 @@ for YMDH in $(cat ${datefile} | grep -v 'xxx' | sort -u); do
   if [ ${do_PART1} == 'YES' ]; then
     # PART1: Running submit_vi_${modelname}.csh
     if [ -d ${workDir} ]; then
-      #echo "WARNING: ${workDir} already exists! Move or remove before proceeding. Exiting..."
-      #exit 1
-      echo "WARNING: ${workDir} already exists! Running rerun_VI.sh before continuing..."
-      ./rerun_VI.sh ${YMDH} ${modelname} ${RerunLabel} || exit 1
+      if [ -z "${RerunLabel}" ]; then
+        echo "ERROR: ${workDir} already exists! Move or remove before proceeding. Exiting..."
+        exit 1
+      else
+        read -n 1 -s -r -p "WARNING: ${workDir} already exists! Press any key to launch rerun_VI.sh..."; echo ""
+        ./rerun_VI.sh "${YMDH}" "${modelname}" "${RerunLabel}" || exit 1
+      fi
     fi
     if [ -f ${tcvitals1} -o -d ${tcvitals2} ]; then
-      #echo "WARNING: ${tcvitals1} and/or ${tcvitals2} already exists! Move or remove before proceeding. Exiting..."
-      #exit 1
-      echo "WARNING: ${tcvitals1} and/or ${tcvitals2} already exists! Running rerun_VI.sh before continuing..."
-      ./rerun_VI.sh ${YMDH} ${modelname} ${RerunLabel} || exit 1
+      if [ -z "${RerunLabel}" ]; then
+        echo "ERROR: ${tcvitals1} and/or ${tcvitals2} already exists! Move or remove before proceeding. Exiting..."
+        exit 1
+      else
+        read -n 1 -s -r -p "WARNING: ${tcvitals1} and/or ${tcvitals2} already exists! Press any key to launch rerun_VI.sh..."; echo ""
+        ./rerun_VI.sh ${YMDH} ${modelname} ${RerunLabel} || exit 1
+      fi
     fi
     if [ ! -f ${ICDir}/${ICfile} ]; then
       echo "ALERT: No ICs for ${DATE}"
