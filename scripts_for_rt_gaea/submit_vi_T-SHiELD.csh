@@ -181,7 +181,6 @@ if ( -e $vitfiles[1] ) then
     endif
   else
     notify_error "Error: ${JOB_NAME} not launched because $ic_dst_file[1] is already available"
-    #exit 1
     continue
   endif
 
