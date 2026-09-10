@@ -8,6 +8,9 @@
 PS4='+ find_errors_in_outdir.sh line ${LINENO}: '
 #set -x
 
+#THIS IS A WIP
+exit         
+
 # ++++++++++++++ START OF USER SETTINGS ++++++++++++++ #
 CONFIGS=${1:-'2024b 2022aGFSv16'} # 2024b|2022aGFSv16|kt24d|kt23d|kt22d|kt21d
 trkr_version=${2:-'v20250612'}    # v20250612|v20260305
