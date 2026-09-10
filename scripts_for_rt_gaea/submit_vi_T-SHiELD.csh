@@ -45,10 +45,11 @@ echo "--------------------------------------------------------------------------
 alias notify_error 'echo "\!:*" | mail -s "Error in submit_vi_T-SHiELD.csh" matthew.morin@noaa.gov'
 
 module load python/3.9
+unlimit
+limit coredumpsize 0
 
 set echo
 set verbose
-unlimit
 
 # === get the model initialization date&time from command-line argument
 set CDATE = $1
