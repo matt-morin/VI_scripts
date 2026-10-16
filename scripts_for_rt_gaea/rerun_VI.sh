@@ -33,8 +33,8 @@ ${setx}
 YMDH=$1
 modelname=$2
 RerunLabel=$3
-#YMDH=2025082100
-#modelname='SHiELD'      # SHiELD|T-SHiELD|T-SHiELD_new
+#YMDH=2026100812
+#modelname='T-SHiELD_new'      # SHiELD|T-SHiELD|T-SHiELD_new
 #RerunLabel='ORIG'       # ORIG|RERUN1|BAD2
 #
 rundir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea
@@ -62,8 +62,7 @@ DATE="${YMDH:0:8}.${YMDH:8:2}Z"
 # ++++++++++++++  END  OF OTHER USER SETTINGS ++++++++++++++ #
 
 set +x
-for var in YMDH modelname RerunLabel rundir datefile GRID ICDirbase ICfile tcvitDir workDir njob_max njobs
-do
+for var in YMDH modelname RerunLabel rundir datefile GRID ICDirbase ICfile tcvitDir workDir njob_max njobs; do
   if [ -n "${!var:-}" ] ; then
     echo "${var} is set to ${!var}"
   else
