@@ -30,7 +30,7 @@
 #   --- exclusive              # Grant the job full access to the node's entire RAM
 #
 # TODO:
-#   --- Sync with vi_T-SHiELD*.sh
+#   --- Sync with vi_*SHiELD*.sh
 #
 # UPDATES:
 #   [2025JUN05] Added documentation header; Stdout mods.; Added BASINID and BASIN definitions (no longer hardwiring basin=AL); basin-->BASIN; Cosmetic mods.; Reduced wall clock from 2 hours to 45 minutes
@@ -83,14 +83,19 @@ echo "ICTILElist: ${ICTILElist[*]}"
 
 # Loop over tile numbers and extract corresponding storm IDs
 for ic_tile in "${ICTILElist[@]}"; do
+  # Create the STORMIDlist array
   STORMIDlist=($(for item in $VITASKlist; do
     if [[ $item == *_tile$ic_tile ]]; then
       echo "$item" | awk -F'_tile' '{print $1}'
     fi
   done | sort | uniq))
 
+  echo "VILOG (tile${ic_tile}): STORMIDlist=${STORMIDlist[*]}"
+
   stormnum=0
-  for STORMID in ${STORMIDlist}; do
+  # STORMIDlist in this script is an array, referencing it as ${STORMIDlist} only returns the first element
+  # To iterate over every item in a Bash array, you must use the [@] syntax wrapped in quotes
+  for STORMID in "${STORMIDlist[@]}"; do #[MJM:2026NOV05] BUG FIX (testing/WIP/TODO)
 
     ((stormnum = stormnum + 1))
     export version=${stormnum}
