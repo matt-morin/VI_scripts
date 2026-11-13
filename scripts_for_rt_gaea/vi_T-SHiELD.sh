@@ -30,7 +30,7 @@
 #   --- exclusive              # Grant the job full access to the node's entire RAM
 #
 # TODO:
-#   --- Sync with vi_SHiELD.sh
+#   --- Sync with vi_*SHiELD*.sh
 #
 # UPDATES:
 #   [2025AUG22] Partial sync with vi_SHiELD.sh (e.g., added documentation header; added use of $run_fcst)
@@ -43,9 +43,9 @@
 #   [2026SEP08] Re-enabled "exit 1" after VI step crashes
 # =================================================
 
-echo "---------------------------------------------------------------------------------------------------------"
+echo '---------------------------------------------------------------------------------------------------------'
 echo "----- STARTING vi_T-SHiELD.sh on $(hostname) at $(date)"
-echo "---------------------------------------------------------------------------------------------------------"
+echo '---------------------------------------------------------------------------------------------------------'
 
 echo "================================================"
 source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1 # KGao 07/02/2024 fix
@@ -89,7 +89,11 @@ for ic_tile in "${ICTILElist[@]}"; do
   #  fi
   #done | sort | uniq))
 
+  echo "VILOG (tile${ic_tile}): STORMIDlist=${STORMIDlist}"
+
   stormnum=0
+  # STORMIDlist in this script is *not* an array, so referencing it as ${STORMIDlist} is OK
+  # To iterate over every item in a Bash array, you must use the [@] syntax wrapped in quotes
   for STORMID in ${STORMIDlist}; do
 
     ((stormnum = stormnum + 1))
@@ -475,8 +479,7 @@ done # End of ic_tile loop
 
 if [ "${run_fcst}" == 'YES' ]; then
   #===============================================================================
-  # trigger forecast job regardless of whether VI is successful
-  # uncomment the lines below to submit the forecast job
+  # Trigger forecast job regardless of whether VI is successful
   echo "VILOG: VI is done [EXIT_CODES_SUM=${EXIT_CODES_SUM}]; Submitting forecast job"
   runscript=${HOME}/NGGPS/T-SHiELD_rt2024/SHiELD_run/GAEA/submit_forecast.sh
   runmode=${runmode:-'realtime'}
@@ -486,11 +489,11 @@ else
   echo "VILOG: VI is done [EXIT_CODES_SUM=${EXIT_CODES_SUM}]; ***Not*** submitting forecast job"
 fi
 
-echo "=== Memory Usage Summary ==="
+echo '=== Memory Usage Summary ==='
 sacct -j ${SLURM_JOB_ID} --format=JobID,JobName,AllocCPUs,MaxRSS,MaxVMSize,State
 
 set +x
-echo "---------------------------------------------------------------------------------------------------------"
+echo '---------------------------------------------------------------------------------------------------------'
 echo "----- ENDING   vi_T-SHiELD.sh on $(hostname) at $(date)"
-echo "---------------------------------------------------------------------------------------------------------"
+echo '---------------------------------------------------------------------------------------------------------'
 exit ${EXIT_CODES_SUM}
