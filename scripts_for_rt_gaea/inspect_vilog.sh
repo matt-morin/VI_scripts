@@ -12,7 +12,7 @@ YYYY=2025
 CONFIG_NAME='2024bVI'
 
 rundir=${HOME}/NGGPS/VI/VI_scripts/scripts_for_rt_gaea
-vitdir=/gpfs/f5/gfdl_w/scratch/${USER}/NGGPS/vitals
+vitdir=/gpfs/f5/gfdl_w/world-shared/SHiELD_INPUT_DATA/tcvitals
 ICdir=/gpfs/f5/gfdl_w/proj-shared/Matthew.Morin/SHiELD_INPUT_DATA/global.v202311/C1536
 YMDHlist=${rundir}/YMDHlist_diff.txt
 tcvit=${HOME}/bin/tcvit_date
