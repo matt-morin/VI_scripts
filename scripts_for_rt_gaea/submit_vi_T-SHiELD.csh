@@ -13,7 +13,7 @@
 #   --- Can be launched using ./run_retro.sh
 #
 # INPUT:
-#   --- /gpfs/f5/gfdl_w/scratch/Matthew.Morin/NGGPS/vitals/syndat_tcvitals.${YYYY}
+#   --- /gpfs/f5/gfdl_w/world-shared/SHiELD_INPUT_DATA/tcvitals/syndat_tcvitals.${YYYY}
 #       ${ic_base}/gfs_data.tile7.nc
 #
 # OUTPUT:
@@ -37,9 +37,9 @@
 #   [2026AUG20] Synced with submit_vi_T-SHiELD_new.csh; Removed trailing forward slash from path definitions
 # =================================================
 
-echo "-----------------------------------------------------------------------------------------------------------"
+echo '-----------------------------------------------------------------------------------------------------------'
 echo "----- STARTING submit_vi_T-SHiELD.csh on `hostname` at `date`"
-echo "-----------------------------------------------------------------------------------------------------------"
+echo '-----------------------------------------------------------------------------------------------------------'
 
 # Define an alias that sends all given arguments ($!:*) as the error message
 alias notify_error 'echo "\!:*" | mail -s "Error in submit_vi_T-SHiELD.csh" matthew.morin@noaa.gov'
@@ -172,8 +172,8 @@ if ( -e $vitfiles[1] ) then
 
   set STORMIDlist = `find ${vital_dir_processed}/${CDATE} -type f -name 'tcvitals.vi' -printf '%T@ %Tc %p\n' | sort -n | awk -F/ '{print $(NF-1)}' | tr '\n' ' '`
   if ( ! -e $ic_dst_file[1] ) then
-    echo "VILOG: Submitting ${CDATE} for ${STORMIDlist}"
     set JOB_NAME = vi_ic_${GRID}_${CDATE}
+    echo "VILOG: Submitting ${JOB_NAME} for STORMIDlist=${STORMIDlist}"
     sbatch --job-name=${JOB_NAME} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},STORMIDlist="${STORMIDlist}",run_fcst=${run_fcst} --qos ${USRDEF_QOS} ${vi_script}
     if ( ${status} != 0 ) then
       notify_error "Error launching ${JOB_NAME} batch job"
@@ -197,6 +197,6 @@ else # if VI not triggered, trigger forecast job from here
 endif
 
 unset echo verbose
-echo "-----------------------------------------------------------------------------------------------------------"
+echo '-----------------------------------------------------------------------------------------------------------'
 echo "----- ENDING   submit_vi_T-SHiELD.csh on `hostname` at `date`"
-echo "-----------------------------------------------------------------------------------------------------------"
+echo '-----------------------------------------------------------------------------------------------------------'
