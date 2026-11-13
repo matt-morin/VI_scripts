@@ -13,7 +13,7 @@
 #   --- Can be launched using ./run_retro.sh
 #
 # INPUT:
-#   --- /gpfs/f5/gfdl_w/scratch/Matthew.Morin/NGGPS/vitals/syndat_tcvitals.${YYYY}
+#   --- /gpfs/f5/gfdl_w/world-shared/SHiELD_INPUT_DATA/tcvitals/syndat_tcvitals.${YYYY}
 #       ${ic_base}/gfs_data.tile[1-6].nc
 #
 # OUTPUT:
@@ -40,9 +40,9 @@
 #   [2026AUG20] Synced with submit_vi_T-SHiELD_new.csh; Removed trailing forward slash from path definitions
 # =================================================
 
-echo "-----------------------------------------------------------------------------------------------------------"
+echo '-----------------------------------------------------------------------------------------------------------'
 echo "----- STARTING submit_vi_SHiELD.csh on `hostname` at `date`"
-echo "-----------------------------------------------------------------------------------------------------------"
+echo '-----------------------------------------------------------------------------------------------------------'
 
 # Define an alias that sends all given arguments ($!:*) as the error message
 alias notify_error 'echo "\!:*" | mail -s "Error in submit_vi_SHiELD.csh" matthew.morin@noaa.gov'
@@ -57,11 +57,11 @@ set verbose
 # === get the model initialization date&time from command-line argument
 set CDATE = $1
 
-#if (! $?SLURM_JOB_QOS) then #[2026AUG25] TODO: Re-enable when needed
+if (! $?SLURM_JOB_QOS) then
   setenv USRDEF_QOS 'normal'
-#else
-#  setenv USRDEF_QOS $SLURM_JOB_QOS
-#endif
+else
+  setenv USRDEF_QOS $SLURM_JOB_QOS
+endif
 if (! $?run_fcst) then
   setenv run_fcst 'YES'
 else
@@ -174,8 +174,8 @@ if ( -e $vitfiles[1] ) then
   set VITASKlist = `/bin/ls -C1 ${vitfiles} | awk -F/ '{print $(NF-1)}' | tr '\n' ' '`
   set nonomatch ic_dst_file=(${ic_dir}/gfs_data.tile?_vi_?.nc) # IC after VI
   if ( ! -e $ic_dst_file[1] ) then
-    echo "VILOG: Submitting ${CDATE} for ${VITASKlist}"
     set JOB_NAME = vi_ic_${GRID}_${CDATE}
+    echo "VILOG: Submitting ${JOB_NAME} for VITASKlist=${VITASKlist}"
     sbatch --job-name=${JOB_NAME} --output=${ic_dir}/%x.out --export=NONE,CDATE=${CDATE},VITASKlist="${VITASKlist}",run_fcst=${run_fcst} --qos ${USRDEF_QOS} ${vi_script}
     if ( ${status} != 0 ) then
       notify_error "Error launching ${JOB_NAME} batch job"
@@ -199,6 +199,6 @@ if ( -e $vitfiles[1] ) then
 endif
 
 unset echo verbose
-echo "-----------------------------------------------------------------------------------------------------------"
+echo '-----------------------------------------------------------------------------------------------------------'
 echo "----- ENDING   submit_vi_SHiELD.csh on `hostname` at `date`"
-echo "-----------------------------------------------------------------------------------------------------------"
+echo '-----------------------------------------------------------------------------------------------------------'
