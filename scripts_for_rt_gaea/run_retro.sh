@@ -35,13 +35,13 @@ PS4='+ [$(date +"%H:%M:%S")] run_retro.sh line ${LINENO}: '
 ${setx}
 
 # ++++++++++++++ START OF MAIN USER SETTINGS +++++++++++++++ #
-modelname='T-SHiELD_new'    #SHiELD|T-SHiELD|T-SHiELD_new
+modelname='SHiELD'    #SHiELD|T-SHiELD|T-SHiELD_new
 run_fcst='NO'         #YES|NO
-#RerunLabel='RERUN3'  #''|ORIG|VItest01|RERUN|CRASH1 #TODO: rerun_VI.sh launch needs better place in this script
+RerunLabel='MissingVI'  #''|ORIG|VItest01|RERUN|CRASH1|MissingVI
 #export min_wind=20   #For "VItest01"
 do_PART1='YES'        #YES|NO (Running submit_vi_${modelname}.csh)
-do_PART2='NO'         #YES|NO (Archiving/moving the tc_vitals data (for abnormal VI tests)) #TODO: Needs improvement (out of order)
-do_PART3='NO'         #YES|NO (Rename the "vi" output using ${RerunLabel})                     #TODO: Needs improvement (out of order)
+#do_PART2='NO'         #YES|NO (Archiving/moving the tc_vitals data (for abnormal VI tests)) #TODO: Needs improvement (out of order)
+#do_PART3='NO'         #YES|NO (Rename the "vi" output using ${RerunLabel})                     #TODO: Needs improvement (out of order)
 # ++++++++++++++  END  OF MAIN USER SETTINGS +++++++++++++++ #
 
 # ++++++++++++++ START OF OTHER USER SETTINGS ++++++++++++++ #
@@ -75,7 +75,7 @@ for YMDH in $(cat ${datefile} | grep -v 'xxx' | sort -u); do
   YMD=${YMDH:0:8}
   CYC=${YMDH:8:2}
   DATE="${YMD}.${CYC}Z"
-  workDir=/gpfs/f5/gfdl_w/scratch/Matthew.Morin/vi_work/${modelname}/${YMDH}
+  workDir=/gpfs/f5/gfdl_w/scratch/${USER}/vi_work/${modelname}/${YMDH}
   ICDir=${ICDirbase}/${DATE}_IC
   stdout=${ICDir}/submit_vi_${modelname}.out
   tcvitals1=${tcvitDir}/observed_all/tcvitals_${YMDH}.txt
@@ -88,7 +88,8 @@ for YMDH in $(cat ${datefile} | grep -v 'xxx' | sort -u); do
         echo "ERROR: ${workDir} already exists! Move or remove before proceeding. Exiting..."
         exit 1
       else
-        read -n 1 -s -r -p "WARNING: ${workDir} already exists! Press any key to launch rerun_VI.sh..."; echo ""
+        #read -n 1 -s -r -p "WARNING: ${workDir} already exists! Press any key to launch rerun_VI.sh..."; echo ""
+        echo "WARNING: ${workDir} already exists! Running rerun_VI.sh..."
         ./rerun_VI.sh "${YMDH}" "${modelname}" "${RerunLabel}" || exit 1
       fi
     fi
@@ -97,7 +98,8 @@ for YMDH in $(cat ${datefile} | grep -v 'xxx' | sort -u); do
         echo "ERROR: ${tcvitals1} and/or ${tcvitals2} already exists! Move or remove before proceeding. Exiting..."
         exit 1
       else
-        read -n 1 -s -r -p "WARNING: ${tcvitals1} and/or ${tcvitals2} already exists! Press any key to launch rerun_VI.sh..."; echo ""
+        #read -n 1 -s -r -p "WARNING: ${tcvitals1} and/or ${tcvitals2} already exists! Press any key to launch rerun_VI.sh..."; echo ""
+        echo "WARNING: ${tcvitals1} and/or ${tcvitals2} already exists! Running rerun_VI.sh..."
         ./rerun_VI.sh ${YMDH} ${modelname} ${RerunLabel} || exit 1
       fi
     fi
@@ -113,31 +115,30 @@ for YMDH in $(cat ${datefile} | grep -v 'xxx' | sort -u); do
         echo "Running submit_vi_${modelname}.csh for ${YMDH}"
         ./submit_vi_${modelname}.csh ${YMDH} > ${stdout} 2>&1
         ((njobs=njobs+1))
+        sed -i "s/${YMDH}/xxx${YMDH}/g" ${datefile}
         sleep 2
       fi
     fi
   fi
 
-  if [ ${do_PART2} == 'YES' ]; then
-    # PART2: Archiving/moving the tc_vitals data (for abnormal VI tests)
-    cd ${rundir}
-    echo "mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${RerunLabel}.txt"
-    echo "mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${RerunLabel}"
-    mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${RerunLabel}.txt || exit 1
-    mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${RerunLabel} || exit 1
-  fi
+  #if [ ${do_PART2} == 'YES' ]; then
+  #  # PART2: Archiving/moving the tc_vitals data (for abnormal VI tests)
+  #  cd ${rundir}
+  #  echo "mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${RerunLabel}.txt"
+  #  echo "mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${RerunLabel}"
+  #  mv ${tcvitDir}/observed_all/tcvitals_${YMDH}.txt ${tcvitDir}/observed_all/tcvitals_${YMDH}_${RerunLabel}.txt || exit 1
+  #  mv ${tcvitDir}/processed/${YMDH} ${tcvitDir}/processed/${YMDH}_${RerunLabel} || exit 1
+  #fi
 
-  if [ ${do_PART3} == 'YES' ]; then
-    # PART3: Rename the "vi" output using ${RerunLabel}
-    cd ${ICDir} || exit 1
-    for vifile in $(find . -maxdepth 1 -type f -name "*vi_*" -mtime -1)
-    do
-      echo "rename vi ${RerunLabel} ${vifile}"
-      rename vi ${RerunLabel} ${vifile} || exit 1
-    done
-  fi
-
-  sed -i "s/${YMDH}/xxx${YMDH}/g" ${datefile}
+  #if [ ${do_PART3} == 'YES' ]; then
+  #  # PART3: Rename the "vi" output using ${RerunLabel}
+  #  cd ${ICDir} || exit 1
+  #  for vifile in $(find . -maxdepth 1 -type f -name "*vi_*" -mtime -1)
+  #  do
+  #    echo "rename vi ${RerunLabel} ${vifile}"
+  #    rename vi ${RerunLabel} ${vifile} || exit 1
+  #  done
+  #fi
 
 done # End of DATE loop
 
